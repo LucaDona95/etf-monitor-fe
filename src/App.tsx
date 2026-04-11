@@ -9,7 +9,6 @@ import {Login} from './pages/login';
 import {EditAlert} from './pages/editAlert';
 import {UserData} from './store/user-data';
 import {Watchlist} from './pages/watchlist';
-import { Alert } from "@mui/material";
 
 
 export const AppContext=createContext<any>({});
@@ -33,7 +32,7 @@ function App() {
           <Route path="/registration" element={<Registration />}></Route>
           <Route path="/login" element={<Login/>}></Route>
           <Route path="/watchlist" element={<Watchlist/>}></Route>
-          <Route path="/alert" element={<Alert/>}></Route>
+          <Route path="/alert" element={<EditAlert/>}></Route>
         </Routes>
       </Router>
       </AppContext.Provider>
