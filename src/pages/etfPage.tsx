@@ -37,25 +37,25 @@ export const EtfPage = () => {
   const buttonContainer = { display: "flex", float: "right" };
 
   let [searchData, setSearchData] = useState({
-    mainFilter: null,
+    mainFilter: "",
     firstTradeDateFrom:null,
     firstTradeDateTo:null,
-    terFrom:null,
-    terTo:null,
-    priceFrom:null,
-    priceTo:null,
-    sustainable:null,
-    typeFilter:null,
-    d1YieldFrom:null,
-    d1YieldTo:null,
-    m1YieldFrom:null,
-    m1YieldTo:null,
-    y1YieldFrom:null,
-    y1YieldTo:null,
-    fundSizeFrom:null,
-    fundSizeTo:null,
-    marketVolumeFrom:null,
-    marketVolumeTo:null,
+    terFrom:"",
+    terTo:"",
+    priceFrom:"",
+    priceTo:"",
+    sustainable:"",
+    typeFilter:"",
+    d1YieldFrom:"",
+    d1YieldTo:"",
+    m1YieldFrom:"",
+    m1YieldTo:"",
+    y1YieldFrom:"",
+    y1YieldTo:"",
+    fundSizeFrom:"",
+    fundSizeTo:"",
+    marketVolumeFrom:"",
+    marketVolumeTo:"",
     page : 1,
     itemsPerPage : 10,
     sortField : "fundSize",
@@ -85,6 +85,20 @@ export const EtfPage = () => {
 
     console.log(loadUrl);
 
+       const paramsForBackend = {
+    ...searchData,
+    
+    sustainable: searchData.sustainable === "" ? null : searchData.sustainable === "true",
+    typeFilter: searchData.typeFilter === "" ? null : searchData.typeFilter
+  };
+
+
+      Object.keys(paramsForBackend).forEach((key) => {
+    const value = paramsForBackend[key];
+    if (value === "" || value === null || value === undefined) {
+      delete paramsForBackend[key];
+    }
+  });
 
 
     /*
@@ -98,7 +112,7 @@ export const EtfPage = () => {
     axios.get(loadUrl,
       {
         params:{
-          ...searchData
+          ...paramsForBackend
         }
       }
     ).then(
@@ -118,6 +132,10 @@ export const EtfPage = () => {
 
   const handleApplyFilters = (newFilters: any) => {
     setSearchData(newFilters);
+
+ 
+
+
 
     loadData(newFilters);
   
@@ -293,14 +311,22 @@ export const EtfPage = () => {
               <TableCell><TableSortLabel onClick={() => { handleSortRequest("fundSize") }}
                 direction={searchData.sortField === 'fundSize' && searchData.sortDirection === 'ASC' ? 'asc' : 'desc'}
                 active={searchData.sortField === 'fundSize'}>Dim. del fondo</TableSortLabel></TableCell>
-              <TableCell>TER</TableCell>
-              <TableCell>1A in %</TableCell>
-              <TableCell>Price</TableCell>
+              <TableCell><TableSortLabel onClick={() => { handleSortRequest("ter") }}
+                direction={searchData.sortField === 'ter' && searchData.sortDirection === 'ASC' ? 'asc' : 'desc'}
+                active={searchData.sortField === 'ter'}>TER</TableSortLabel></TableCell>
+              <TableCell><TableSortLabel onClick={() => { handleSortRequest("y1Yield") }}
+                direction={searchData.sortField === 'y1Yield' && searchData.sortDirection === 'ASC' ? 'asc' : 'desc'}
+                active={searchData.sortField === 'y1Yield'}>1A in %</TableSortLabel></TableCell>
+              <TableCell><TableSortLabel onClick={() => { handleSortRequest("regularMarketPrice") }}
+                direction={searchData.sortField === 'regularMarketPrice' && searchData.sortDirection === 'ASC' ? 'asc' : 'desc'}
+                active={searchData.sortField === 'regularMarketPrice'}>Price</TableSortLabel></TableCell>
               <TableCell>Distribuzione</TableCell>
               <TableCell><TableSortLabel onClick={() => { handleSortRequest("isin") }}
                 direction={searchData.sortField === 'isin' && searchData.sortDirection === 'ASC' ? 'asc' : 'desc'}
                 active={searchData.sortField === 'isin'}>ISIN</TableSortLabel></TableCell>
-              <TableCell>Ticker</TableCell>
+              <TableCell><TableSortLabel onClick={() => { handleSortRequest("symbol") }}
+                direction={searchData.sortField === 'symbol' && searchData.sortDirection === 'ASC' ? 'asc' : 'desc'}
+                active={searchData.sortField === 'symbol'}>Ticker</TableSortLabel></TableCell>
                         {
                 userData != null ? <TableCell>Add to Watchlist</TableCell> : null
               }
