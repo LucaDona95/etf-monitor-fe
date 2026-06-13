@@ -3,7 +3,6 @@ import { useState, useEffect, useRef } from "react";
 import axios from "axios";
 import { useContext } from "react";
 import { AppContext } from "../App";
-import { styled } from "@mui/material/styles";
 import {
   TableContainer,
   Paper,
@@ -17,13 +16,6 @@ import {
   TableSortLabel,
   Typography,
   Link,
-  Dialog,
-  DialogTitle,
-  DialogContent,
-  DialogContentText,
-  DialogActions,
-  Grid,
-  TextField,
 } from "@mui/material";
 import { EtfSearchDialog } from "../components/etfSearchDialog";
 
@@ -46,6 +38,24 @@ export const EtfPage = () => {
 
   let [searchData, setSearchData] = useState({
     mainFilter: null,
+    firstTradeDateFrom:null,
+    firstTradeDateTo:null,
+    terFrom:null,
+    terTo:null,
+    priceFrom:null,
+    priceTo:null,
+    sustainable:null,
+    typeFilter:null,
+    d1YieldFrom:null,
+    d1YieldTo:null,
+    m1YieldFrom:null,
+    m1YieldTo:null,
+    y1YieldFrom:null,
+    y1YieldTo:null,
+    fundSizeFrom:null,
+    fundSizeTo:null,
+    marketVolumeFrom:null,
+    marketVolumeTo:null,
     page : 1,
     itemsPerPage : 10,
     sortField : "fundSize",
@@ -54,7 +64,6 @@ export const EtfPage = () => {
 
   });
 
-    let [tmpSearchData, setTmpSearchData] = useState({...searchData});
 
   const [searchDialogOpen, setSearchDialogOpen] = useState(false);
 
@@ -107,6 +116,13 @@ export const EtfPage = () => {
     );
   };
 
+  const handleApplyFilters = (newFilters: any) => {
+    setSearchData(newFilters);
+
+    loadData(newFilters);
+  
+};
+
   const changePage = (num: number) => {
     console.log("PAGE NUMBER: " + num);
 
@@ -152,7 +168,7 @@ export const EtfPage = () => {
     //setSearchDialogOpen(true);
     console.log("open search dialog");
 
-      setTmpSearchData(searchData);
+    
       setSearchDialogOpen(true);
   };
 
@@ -251,9 +267,8 @@ export const EtfPage = () => {
           >
             SEARCH ETF
           </Button>
-          <EtfSearchDialog searchDialogOpen={searchDialogOpen} setSearchDialogOpen={setSearchDialogOpen} 
-            handleSearch={loadData} searchData={searchData} setSearchData={setSearchData} setTmpSearchData={setTmpSearchData}
-             tmpSearchData={tmpSearchData}></EtfSearchDialog>
+          <EtfSearchDialog open={searchDialogOpen} onClose={() => setSearchDialogOpen(false)} 
+            currentFilters={searchData} onApplyFilters={handleApplyFilters}></EtfSearchDialog>
         </Box>
 
         <Typography>

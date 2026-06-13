@@ -1,134 +1,201 @@
 import {
-  Button, Box, 
-   Dialog, DialogTitle, DialogContent, DialogActions, Grid, TextField, 
-} from '@mui/material';
-import { styled } from '@mui/material/styles';
-import * as React from 'react';
-import { useState } from "react";
+  Button,
+  Box,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
+  Grid,
+  TextField,
+} from "@mui/material";
 
-import { NumericFormat } from 'react-number-format';
-import type { NumericFormatProps } from 'react-number-format';
+import { useState, useEffect } from "react";
+
+import { LocalizationProvider } from "@mui/x-date-pickers/LocalizationProvider";
+import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
+import { DatePicker } from "@mui/x-date-pickers/DatePicker";
+import dayjs, { Dayjs } from "dayjs";
+
+import { NumericFormat } from "react-number-format";
+import type { NumericFormatProps } from "react-number-format";
+import * as React from "react";
 
 interface CustomProps {
   onChange: (event: { target: { name: string; value: string } }) => void;
   name: string;
 }
 
-
-const Item = styled('div')(({ theme }) => ({
-  border: '1px solid',
-  borderColor: theme.palette.mode === 'dark' ? '#444d58' : '#ced7e0',
-  padding: theme.spacing(2),
-  borderRadius: '4px',
-  display: 'flex'
-}));
-
-
-
-
-const TerFormat = React.forwardRef<NumericFormatProps, CustomProps>(
+const TerFormat = React.forwardRef<HTMLInputElement, CustomProps>(
   function NumericFormatCustom(props, ref) {
     const { onChange, ...other } = props;
 
     return (
       <NumericFormat
         {...other}
-        getInputRef={ref}
+        getInputRef={ref} // MUI v6 passerà il ref qui
         onValueChange={(values) => {
           onChange({
             target: {
               name: props.name,
-              value: values.value,
+              value: values.value || "", // Evita di passare stringa vuota come null
             },
           });
         }}
         valueIsNumericString
-        decimalScale={1}
+        decimalScale={2} // Impostato a 2 decimali come avevi chiesto prima
         decimalSeparator="."
         allowNegative={false}
-        isAllowed={(values: any) => {
-
-          return values.floatValue <= 10 || !values.floatValue;
+        isAllowed={(values) => {
+          const { floatValue } = values;
+          return floatValue === undefined ? true : floatValue <= 10;
         }}
       />
     );
   },
 );
 
+export const EtfSearchDialog = ({
+  open,
+  onClose,
+  currentFilters,
+  onApplyFilters,
+}: any) => {
+  const [localFilters, setLocalFilters] = useState<any>({ ...currentFilters });
 
-export const EtfSearchDialog = (props: any) => {
+  useEffect(() => {
+    if (open) {
+      setLocalFilters({ ...currentFilters });
+    }
+  }, [open, currentFilters]);
 
-
-
-const handleSearch = () => {
- 
-          const updatedSearchData = { 
-        ...props.tmpSearchData, 
-        page: 1
+  const handleSearchSubmit = () => {
+    const finalFilters: any = {
+      ...localFilters,
+      page: 1,
     };
 
-
-    props.setSearchDialogOpen(false);
-    props.setSearchData(updatedSearchData);
-    props.handleSearch(updatedSearchData);
-
-
-  }
-
-
-    const handleClose = () =>{
-
-    props.setSearchDialogOpen(false);
-  }
-
-
-    const mainFilterChange = (event: any) => {
-
-
-       const updatedSearchData = { 
-        ...props.tmpSearchData, 
-        mainFilter: event.target.value as string
-    };
-
-    props.setTmpSearchData(updatedSearchData);
-    console.log("Main filter selected: "+event.target.value);
+    onApplyFilters(finalFilters);
+    onClose();
   };
 
-
+  const handleInputChange = (field: keyof any, value: any) => {
+    setLocalFilters((prev: any) => ({
+      ...prev,
+      [field]: value,
+    }));
+  };
 
   return (
-    <Dialog open={props.searchDialogOpen} onClose={handleClose} aria-labelledby='dialog-search-etf' aria-describedby='search-etf-content'>
-            <DialogTitle id='dialog-search-etf'>Search etf</DialogTitle>
-                <DialogContent id='search-etf-content'>
-                     <Box sx={{ width: '100%', margin: '5% auto' }}>
-                        <Grid size={{ xs: 12, sm: 6 }}>
-    
-                  
-                                <TextField sx={{ margin: "1rem" }} fullWidth  label="Main Filter" variant="outlined"
-                              
-                                    id="main-filter-id"
-                                    value={props.tmpSearchData.mainFilter==null?"":props.tmpSearchData.mainFilter}
-                                   
-                                    onChange={mainFilterChange}
-                                >
-                                  
-                                </TextField>
-                           
-                        </Grid>
-                      
-                     </Box>
-    
-                </DialogContent>
-    
-                 <DialogActions>
-                     <Button onClick={handleClose}>Cancel</Button>
-                    <Button onClick={handleSearch}>Search</Button>
-    
-                    </DialogActions>
-    
-        </Dialog>
+    <LocalizationProvider dateAdapter={AdapterDayjs}>
+      <Dialog
+        open={open}
+        onClose={onClose}
+        aria-labelledby="dialog-search-etf"
+        fullWidth
+        maxWidth="sm"
+      >
+        <DialogTitle id="dialog-search-etf">Search ETF</DialogTitle>
 
-  )
+        <DialogContent id="search-etf-content">
+          <Box sx={{ width: "100%", mt: 2 }}>
+            <Grid container spacing={2}>
+              <Grid size={{ xs: 12 }}>
+                <TextField
+                  fullWidth
+                  label="Main Filter"
+                  variant="outlined"
+                  id="main-filter-id"
+                  value={
+                    localFilters.mainFilter != null
+                      ? localFilters.mainFilter
+                      : ""
+                  }
+                  onChange={(e) =>
+                    handleInputChange("mainFilter", e.target.value)
+                  }
+                />
+              </Grid>
 
+              <Grid size={{ xs: 12, sm: 6 }}>
+                <DatePicker
+                  label="First Trade Date From"
+                  value={
+                    localFilters.firstTradeDateFrom
+                      ? dayjs(localFilters.firstTradeDateFrom)
+                      : null
+                  }
+                  onChange={(newValue: Dayjs | null) => {
+                    const formattedDate = newValue
+                      ? newValue.format("YYYY-MM-DD")
+                      : null;
+                    handleInputChange("firstTradeDateFrom", formattedDate);
+                  }}
+                  slotProps={{ textField: { fullWidth: true } }}
+                />
+              </Grid>
 
-}
+              <Grid size={{ xs: 12, sm: 6 }}>
+                <DatePicker
+                  label="First Trade Date To"
+                  value={
+                    localFilters.firstTradeDateTo
+                      ? dayjs(localFilters.firstTradeDateTo)
+                      : null
+                  }
+                  onChange={(newValue: Dayjs | null) => {
+                    const formattedDate = newValue
+                      ? newValue.format("YYYY-MM-DD")
+                      : null;
+                    handleInputChange("firstTradeDateTo", formattedDate);
+                  }}
+                  slotProps={{ textField: { fullWidth: true } }}
+                />
+              </Grid>
+
+              <Grid size={{ xs: 12, sm: 6 }}>
+                <TextField
+                  fullWidth
+                  label="TER From (%)"
+                  name="terFrom"
+                  value={localFilters.terFrom}
+                  onChange={(e) => handleInputChange("terFrom", e.target.value)}
+                  // Questo è il modo corretto e moderno in MUI v6 per iniettare TerFormat
+                  slotProps={{
+                    input: {
+                      inputComponent: TerFormat as any,
+                    },
+                  }}
+                />
+              </Grid>
+
+              <Grid size={{ xs: 12, sm: 6 }}>
+                <TextField
+                  fullWidth
+                  label="TER To (%)"
+                  name="terTo"
+                  value={localFilters.terTo}
+                  onChange={(e) => handleInputChange("terTo", e.target.value)}
+                  slotProps={{
+                    input: {
+                      inputComponent: TerFormat as any,
+                    },
+                  }}
+                />
+              </Grid>
+            </Grid>
+          </Box>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={onClose}>Cancel</Button>
+          <Button
+            onClick={handleSearchSubmit}
+            variant="contained"
+            color="primary"
+          >
+            Search
+          </Button>
+        </DialogActions>
+      </Dialog>
+    </LocalizationProvider>
+  );
+};
