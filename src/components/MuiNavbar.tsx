@@ -41,7 +41,7 @@ export const MuiNavbar = () => {
             ETF MONITOR APP
           </Typography>
           <Stack direction="row" spacing={2}>
-            <Button onClick={() => navigate("/etf")} color="inherit">
+            <Button onClick={() => navigate("/")} color="inherit">
               Etf Table
             </Button>
             {userData == null ? <Button color='inherit' onClick={() => navigate("/login")}>Login</Button> :

@@ -1,4 +1,3 @@
-import { MainPage } from "./pages/mainPage";
 import { EtfPage } from "./pages/etfPage";
 import { BrowserRouter as Router, Route, Routes } from "react-router-dom";
 import { MuiNavbar } from "./components/MuiNavbar";
@@ -26,8 +25,7 @@ function App() {
       <Router>
         <MuiNavbar />
         <Routes> 
-          <Route path="/" element={<MainPage />} />
-          <Route path="/etf" element={<EtfPage />}></Route>
+          <Route path="/" element={<EtfPage />}></Route>
           <Route path="/etfDetail" element={<EtfDetail />}></Route>
           <Route path="/registration" element={<Registration />}></Route>
           <Route path="/login" element={<Login/>}></Route>
