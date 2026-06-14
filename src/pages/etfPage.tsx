@@ -18,6 +18,7 @@ import {
   Link,
 } from "@mui/material";
 import { EtfSearchDialog } from "../components/etfSearchDialog";
+import { useSearchParams } from 'react-router-dom';
 
 interface ColumnConfig {
   id: string;
@@ -48,44 +49,63 @@ export const EtfPage = () => {
 
   const [tableData, setTableData] = useState([] as any[]);
 
-  const shouldLoad = useRef(true);
-
   const buttonContainer = { display: "flex", float: "right" };
 
-  let [searchData, setSearchData] = useState({
-    mainFilter: "",
-    firstTradeDateFrom: null,
-    firstTradeDateTo: null,
-    terFrom: "",
-    terTo: "",
-    priceFrom: "",
-    priceTo: "",
-    sustainable: "",
-    typeFilter: "",
-    d1YieldFrom: "",
-    d1YieldTo: "",
-    m1YieldFrom: "",
-    m1YieldTo: "",
-    y1YieldFrom: "",
-    y1YieldTo: "",
-    fundSizeFrom: "",
-    fundSizeTo: "",
-    marketVolumeFrom: "",
-    marketVolumeTo: "",
-    page: 1,
-    itemsPerPage: 10,
-    sortField: "fundSize",
-    sortDirection: "DESC",
-  });
+  const [searchParams, setSearchParams] = useSearchParams();
+
+const searchData = {
+    mainFilter: searchParams.get('mainFilter') || "",
+    firstTradeDateFrom: searchParams.get('firstTradeDateFrom') || null,
+    firstTradeDateTo: searchParams.get('firstTradeDateTo') || null,
+    terFrom: searchParams.get('terFrom') || "",
+    terTo: searchParams.get('terTo') || "",
+    priceFrom: searchParams.get('priceFrom') || "",
+    priceTo: searchParams.get('priceTo') || "",
+    sustainable: searchParams.get('sustainable') || "",
+    typeFilter: searchParams.get('typeFilter') || "",
+    d1YieldFrom: searchParams.get('d1YieldFrom') || "",
+    d1YieldTo: searchParams.get('d1YieldTo') || "",
+    m1YieldFrom: searchParams.get('m1YieldFrom') || "",
+    m1YieldTo: searchParams.get('m1YieldTo') || "",
+    y1YieldFrom:  searchParams.get('y1YieldFrom') || "",
+    y1YieldTo: searchParams.get('y1YieldTo') || "",
+    fundSizeFrom: searchParams.get('fundSizeFrom') || "",
+    fundSizeTo: searchParams.get('fundSizeTo') || "",
+    marketVolumeFrom: searchParams.get('marketVolumeFrom') || "",
+    marketVolumeTo: searchParams.get('marketVolumeTo') || "",
+    page: parseInt(searchParams.get('page') || "1", 10), 
+    itemsPerPage: parseInt(searchParams.get('itemsPerPage') || "10", 10),
+    sortField: searchParams.get('sortField') || "fundSize",
+    sortDirection: searchParams.get('sortDirection') || "DESC",
+  };
 
   const [searchDialogOpen, setSearchDialogOpen] = useState(false);
 
   useEffect(() => {
-    if (shouldLoad.current) {
-      shouldLoad.current = false;
-      loadData(searchData);
+
+    if (!searchParams.get('page') || !searchParams.get('sortField')) {
+      updateUrlParams(searchData);
+      return; 
     }
-  }, []);
+    
+    loadData(searchData);
+    
+  }, [searchParams]);
+
+
+  const updateUrlParams = (newFilters: any) => {
+   const params: Record<string, string> = {};
+
+    Object.keys(newFilters).forEach((key) => {
+      const value = newFilters[key];
+     
+      if (value !== '' && value !== null && value !== undefined) {
+        params[key] = String(value);
+      }
+    });
+
+    setSearchParams(params);
+  };
 
   const loadData = (searchData: any) => {
     const loadUrl = "http://localhost:8081/api/v1/etfs";
@@ -111,6 +131,9 @@ export const EtfPage = () => {
         delete paramsForBackend[key];
       }
     });
+
+
+
 
     /*
     const config=userData!=null?{
@@ -140,45 +163,42 @@ export const EtfPage = () => {
   };
 
   const handleApplyFilters = (newFilters: any) => {
-    setSearchData(newFilters);
+   // setSearchData(newFilters);
 
-    loadData(newFilters);
+  updateUrlParams({
+      ...searchData,
+      ...newFilters,
+      page: 1
+    });
+
+
+    //loadData(newFilters);
   };
 
   const changePage = (num: number) => {
     console.log("PAGE NUMBER: " + num);
 
-    const updatedSearchData = {
+   updateUrlParams({
       ...searchData,
-      page: searchData.page + num,
-    };
+      page: searchData.page + num, // Semplice operazione matematica
+    });
 
-    setSearchData(updatedSearchData);
-    loadData(updatedSearchData);
+    //setSearchData(updatedSearchData);
+    //loadData(updatedSearchData);
   };
 
   const handleSortRequest = (columnName: string) => {
   
   const nextDirection = columnName === searchData.sortField && searchData.sortDirection === 'ASC' 
-    ? 'DESC' 
-    : 'ASC';
+      ? 'DESC' 
+      : 'ASC';
 
-  const updatedSearchData = { 
-    ...searchData, 
-    sortField: columnName,
-    sortDirection: nextDirection,
-    page: 1 
-  };
-
-  setSearchData(updatedSearchData);
-  loadData(updatedSearchData); 
-};
-  
-  const openSearchDialog = () => {
-    //setSearchDialogOpen(true);
-    console.log("open search dialog");
-
-    setSearchDialogOpen(true);
+    updateUrlParams({ 
+      ...searchData, 
+      sortField: columnName,
+      sortDirection: nextDirection,
+      page: 1 // Resetta alla prima pagina quando cambia l'ordinamento
+    });
   };
 
   const showEtf = (etfData: any) => {
@@ -243,6 +263,14 @@ export const EtfPage = () => {
       setTableData(updatedList);
     });
   };
+
+    const openSearchDialog = () => {
+    //setSearchDialogOpen(true);
+    console.log("open search dialog");
+
+    setSearchDialogOpen(true);
+  };
+
 
   return (
     <Paper sx={{ width: "80%", overflow: "hidden", margin: "3rem auto" }}>

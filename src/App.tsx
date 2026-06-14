@@ -25,7 +25,7 @@ function App() {
       <Router>
         <MuiNavbar />
         <Routes> 
-          <Route path="/" element={<EtfPage />}></Route>
+          <Route path="/etfs" element={<EtfPage />}></Route>
           <Route path="/etfDetail" element={<EtfDetail />}></Route>
           <Route path="/registration" element={<Registration />}></Route>
           <Route path="/login" element={<Login/>}></Route>
