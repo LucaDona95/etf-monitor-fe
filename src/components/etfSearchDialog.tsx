@@ -75,8 +75,8 @@ const AmountFormat = React.forwardRef<HTMLInputElement, CustomProps>(
         decimalSeparator="."
         allowNegative={false}
         isAllowed={(values) => {
-          const { floatValue } = values;
-          return floatValue === undefined;
+          
+          return true;
         }}
       />
     );

@@ -201,10 +201,11 @@ const searchData = {
     });
   };
 
-  const showEtf = (etfData: any) => {
-    console.log("selezionato record con id: " + etfData.id);
-    navigate("/etfDetail", { state: etfData });
-  };
+const showEtf = (etfData: any) => {
+  console.log("Navigazione verso l'ETF con ID: " + etfData.id);
+  
+  navigate(`/etf/${etfData.id}`);
+};
 
   const removeFromWatchlist = (etfData: any) => {
     let loadUrl = "http://localhost:8081/api/watchlist";

@@ -1,226 +1,455 @@
-import { useNavigate } from "react-router-dom";
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect } from "react";
 import axios from "axios";
-import { useLocation } from "react-router-dom";
-import Grid from "@mui/material/Grid";
-import Paper from "@mui/material/Paper";
-import Box from "@mui/material/Box";
-import { Typography } from "@mui/material";
-import { Margin } from "@mui/icons-material";
-import { Button } from "@mui/material";
+import { useParams, useNavigate } from "react-router-dom";
+import {
+  Box,
+  Typography,
+  Paper,
+  Card,
+  CardContent,
+  Divider,
+  Button,
+  Chip,
+  CircularProgress,
+  Grid,
+} from "@mui/material";
+import ArrowBackIcon from "@mui/icons-material/ArrowBack";
 
 export const EtfDetail = () => {
-  const shouldLoad = useRef(true);
+  const { id } = useParams<{ id: string }>(); 
+  const navigate = useNavigate();
+  const [loading, setLoading] = useState(true);
 
-  const location = useLocation();
-
-  const [currentEtf, setEtf] = useState({
-    id: null,
-    isin: "",
-    ticker: "",
-    instrumentType: "",
-    ter: null,
-    price: null,
-    fundSize: null,
-    firstTradeDate: null,
-    type: "",
-    sustainable: false,
-    volume: null,
-    active: false,
-    name: "",
-    marketDayHigh: null,
-    marketDayLow: null,
-    currency: "",
-    exchangeCode: "",
-    dailyYield: null,
-    m1yield: null,
-    m3yield: null,
-    m6yield: null,
-    y1Yield: null,
-    y3Yield: null,
-    y5Yield: null,
-    previous1YearYield: null,
-    previous2YearYield: null,
-    previous3yearYield: null,
-  });
+  const [currentEtf, setEtf] = useState<any>(null);
 
   useEffect(() => {
-    if (shouldLoad.current) {
-      shouldLoad.current = false;
-      let currentEtf = location.state;
-      loadData(currentEtf.id);
+    const loadData = (etfId: string) => {
+      const loadUrl = `http://localhost:8081/api/v1/etfs/${etfId}`;
+      const token = localStorage.getItem("jwtToken");
+      const config = token
+        ? { headers: { Authorization: `Bearer ${token}` } }
+        : {};
+
+      axios
+        .get(loadUrl, config)
+        .then((response) => {
+          setEtf(response.data);
+          setLoading(false);
+        })
+        .catch((err) => {
+          console.error("Errore nel caricamento del dettaglio ETF", err);
+          setLoading(false);
+        });
+    };
+
+    if (id) {
+      loadData(id);
     }
-  }, []);
+  }, [id]);
 
-  const loadData = (id: number) => {
-    let loadUrl = "http://localhost:8081/api/etf/" + id;
-
-    axios.get(loadUrl).then((response) => {
-      console.log(response);
-      setEtf(response.data);
-    });
+  // Helper per colorare i rendimenti (Verde se positivo, Rosso se negativo)
+  const renderYield = (value: number | null) => {
+    if (value === null || value === undefined) return "N/A";
+    const color = value >= 0 ? "success.main" : "error.main";
+    const sign = value > 0 ? "+" : "";
+    return (
+      <Typography variant="body1" sx={{ color, fontWeight: "bold" }}>
+        {sign}
+        {value.toFixed(2)}%
+      </Typography>
+    );
   };
 
+  if (loading) {
+    return (
+      <Box
+        sx={{
+          display: "flex",
+          justifyContent: "center",
+          alignItems: "center",
+          height: "80vh",
+        }}
+      >
+        <CircularProgress />
+      </Box>
+    );
+  }
+
+  if (!currentEtf) {
+    return (
+      <Box sx={{ width: "50%", margin: "5% auto", textAlign: "center" }}>
+        <Typography variant="h5" color="error">
+          ETF non trovato o ID non valido.
+        </Typography>
+        <Button
+          startIcon={<ArrowBackIcon />}
+          onClick={() => navigate(-1)}
+          sx={{ mt: 2 }}
+        >
+          Torna indietro
+        </Button>
+      </Box>
+    );
+  }
+
   return (
-    <Box sx={{ width: "50%", margin: "5% auto" }}>
-      <Grid container rowSpacing={1} columnSpacing={{ xs: 1, sm: 2, md: 3 }}>
-        <Grid size={6}>
-          <div>
-            <Typography variant="h6">ISIN</Typography>
-            <Typography variant="h6">{currentEtf.isin}</Typography>
-          </div>
-        </Grid>
-        <Grid size={6}>
-          <div>
-            <Typography variant="h6">TICKER</Typography>
-            <Typography variant="h6">{currentEtf.ticker}</Typography>
-          </div>
-        </Grid>
-        <Grid size={6}>
-          <div>
-            <Typography variant="h6">INSTRUMENT TYPE</Typography>
-            <Typography variant="h6">{currentEtf.instrumentType}</Typography>
-          </div>
-        </Grid>
-        <Grid size={6}>
-          <div>
-            <Typography variant="h6">TER</Typography>
-            <Typography variant="h6">{currentEtf.ter}</Typography>
-          </div>
-        </Grid>
-        <Grid size={6}>
-          <div>
-            <Typography variant="h6">PRICE</Typography>
-            <Typography variant="h6">{currentEtf.price}</Typography>
-          </div>
-        </Grid>
-        <Grid size={6}>
-          <div>
-            <Typography variant="h6">FUND SIZE</Typography>
-            <Typography variant="h6">{currentEtf.fundSize}</Typography>
-          </div>
-        </Grid>
-        <Grid size={6}>
-          <div>
-            <Typography variant="h6">FIRST TRADE DATE</Typography>
-            <Typography variant="h6">{currentEtf.firstTradeDate}</Typography>
-          </div>
-        </Grid>
-        <Grid size={6}>
-          <div>
-            <Typography variant="h6">TYPE</Typography>
-            <Typography variant="h6">{currentEtf.type}</Typography>
-          </div>
-        </Grid>
-        <Grid size={6}>
-          <div>
-            <Typography variant="h6">SUSTAINABLE</Typography>
-            <Typography variant="h6">{currentEtf.sustainable}</Typography>
-          </div>
-        </Grid>
-        <Grid size={6}>
-          <div>
-            <Typography variant="h6">VOLUME</Typography>
-            <Typography variant="h6">{currentEtf.volume}</Typography>
-          </div>
-        </Grid>
-        <Grid size={6}>
-          <div>
-            <Typography variant="h6">ACTIVE</Typography>
-            <Typography variant="h6">{currentEtf.active}</Typography>
-          </div>
-        </Grid>
-        <Grid size={6}>
-          <div>
-            <Typography variant="h6">NAME</Typography>
-            <Typography variant="h6">{currentEtf.name}</Typography>
-          </div>
-        </Grid>
-        <Grid size={6}>
-          <div>
-            <Typography variant="h6">MARKET DAY HIGH</Typography>
-            <Typography variant="h6">{currentEtf.marketDayHigh}</Typography>
-          </div>
-        </Grid>
-        <Grid size={6}>
-          <div>
-            <Typography variant="h6">MARKET DAY LOW</Typography>
-            <Typography variant="h6">{currentEtf.marketDayLow}</Typography>
-          </div>
-        </Grid>
-        <Grid size={6}>
-          <div>
-            <Typography variant="h6">CURRENCY</Typography>
-            <Typography variant="h6">{currentEtf.currency}</Typography>
-          </div>
-        </Grid>
-        <Grid size={6}>
-          <div>
-            <Typography variant="h6">EXCHANGE CODE</Typography>
-            <Typography variant="h6">{currentEtf.exchangeCode}</Typography>
-          </div>
-        </Grid>
-        <Grid size={6}>
-          <div>
-            <Typography variant="h6">DAILY YIELD</Typography>
-            <Typography variant="h6">{currentEtf.dailyYield}</Typography>
-          </div>
-        </Grid>
-        <Grid size={6}>
-          <div>
-            <Typography variant="h6">1 MONTH YIELD</Typography>
-            <Typography variant="h6">{currentEtf.m1yield}</Typography>
-          </div>
-        </Grid>
-        <Grid size={6}>
-          <div>
-            <Typography variant="h6">3 MONTH YIELD</Typography>
-            <Typography variant="h6">{currentEtf.m3yield}</Typography>
-          </div>
-        </Grid>
-        <Grid size={6}>
-          <div>
-            <Typography variant="h6">6 MONTH YIELD</Typography>
-            <Typography variant="h6">{currentEtf.m6yield}</Typography>
-          </div>
-        </Grid>
-        <Grid size={6}>
-          <div>
-            <Typography variant="h6">1 YEAR YIELD</Typography>
-            <Typography variant="h6">{currentEtf.y1Yield}</Typography>
-          </div>
-        </Grid>
-        <Grid size={6}>
-          <div>
-            <Typography variant="h6">3 YEAR YIELD</Typography>
-            <Typography variant="h6">{currentEtf.y3Yield}</Typography>
-          </div>
-        </Grid>
-        <Grid size={6}>
-          <div>
-            <Typography variant="h6">5 YIEAR YIELD</Typography>
-            <Typography variant="h6">{currentEtf.y5Yield}</Typography>
-          </div>
-        </Grid>
-        <Grid size={6}>
-          <div>
-            <Typography variant="h6">PREVIOUS 1 YIEAR YIELD</Typography>
-            <Typography variant="h6">
-              {currentEtf.previous1YearYield}
+    <Box
+      sx={{ width: { xs: "95%", md: "75%", lg: "60%" }, margin: "3rem auto" }}
+    >
+      {/* Bottone di ritorno */}
+      <Button
+        startIcon={<ArrowBackIcon />}
+        onClick={() => navigate(-1)}
+        sx={{ mb: 3 }}
+        variant="text"
+      >
+        Back to Search
+      </Button>
+
+      {/* HEADER PRINCIPALE: Nome ETF e info chiave */}
+      <Paper
+        elevation={3}
+        sx={{ p: 4, mb: 4, borderRadius: 2, bgcolor: "background.paper" }}
+      >
+        <Box
+          sx={{
+            display: "flex",
+            justifyContent: "space-between",
+            alignItems: "flex-start",
+            flexWrap: "wrap",
+            gap: 2,
+          }}
+        >
+          <Box>
+            <Typography
+              variant="h4"
+              component="h1"
+              sx={{ fontWeight: "bold", mb: 1 }}
+            >
+              {currentEtf.longName || currentEtf.shortName || "N/A"}
             </Typography>
-          </div>
+            <Box sx={{ display: "flex", gap: 1, alignItems: "center" }}>
+              <Chip
+                label={currentEtf.symbol}
+                color="primary"
+                variant="outlined"
+                size="small"
+                sx={{ fontWeight: "bold" }}
+              />
+              <Typography variant="body2" color="text.secondary">
+                ISIN: <strong>{currentEtf.isin}</strong>
+              </Typography>
+            </Box>
+          </Box>
+
+          {/* Box Prezzo grande */}
+          <Box sx={{ textAlign: { xs: "left", sm: "right" } }}>
+            <Typography
+              variant="h3"
+              sx={{ fontWeight: "bold", color: "primary.main" }}
+            >
+              {currentEtf.regularMarketPrice
+                ? `${currentEtf.regularMarketPrice.toFixed(2)} ${currentEtf.currency || "EUR"}`
+                : "N/A"}
+            </Typography>
+            <Typography variant="body2" color="text.secondary">
+              Exchange: {currentEtf.exchangeCode || "N/A"}
+            </Typography>
+          </Box>
+        </Box>
+      </Paper>
+
+      <Grid container spacing={3}>
+        {/* SEZIONE 1: Dettagli del Fondo (Anagrafica) */}
+        <Grid size={{ xs: 12, md: 6 }}>
+          <Card elevation={2} sx={{ height: "100%", borderRadius: 2 }}>
+            <CardContent>
+              <Typography
+                variant="h6"
+                sx={{ fontWeight: "bold", mb: 2, color: "text.primary" }}
+              >
+                Fund Details
+              </Typography>
+              <Divider sx={{ mb: 2 }} />
+
+              <Grid container spacing={2}>
+                <Grid size={6}>
+                  <Typography variant="body2" color="text.secondary">
+                    Instrument Type
+                  </Typography>
+                </Grid>
+                <Grid size={6}>
+                  <Typography variant="body1" sx={{ fontWeight: 500 }}>
+                    {currentEtf.instrumentType || "N/A"}
+                  </Typography>
+                </Grid>
+
+                <Grid size={6}>
+                  <Typography variant="body2" color="text.secondary">
+                    TER
+                  </Typography>
+                </Grid>
+                <Grid size={6}>
+                  <Typography variant="body1" sx={{ fontWeight: 500 }}>
+                    {currentEtf.ter != null ? `${currentEtf.ter}%` : "N/A"}
+                  </Typography>
+                </Grid>
+
+                <Grid size={6}>
+                  <Typography variant="body2" color="text.secondary">
+                    Fund Size
+                  </Typography>
+                </Grid>
+                <Grid size={6}>
+                  <Typography variant="body1" sx={{ fontWeight: 500 }}>
+                    {currentEtf.fundSize != null
+                      ? `${currentEtf.fundSize} M`
+                      : "N/A"}
+                  </Typography>
+                </Grid>
+
+                <Grid size={6}>
+                  <Typography variant="body2" color="text.secondary">
+                    Inception Date
+                  </Typography>
+                </Grid>
+                <Grid size={6}>
+                  <Typography variant="body1" sx={{ fontWeight: 500 }}>
+                    {currentEtf.firstQuoteDate || "N/A"}
+                  </Typography>
+                </Grid>
+
+                <Grid size={6}>
+                  <Typography variant="body2" color="text.secondary">
+                    Distribution Type
+                  </Typography>
+                </Grid>
+                <Grid size={6}>
+                  <Typography variant="body1" sx={{ fontWeight: 500 }}>
+                    {currentEtf.type || "N/A"}
+                  </Typography>
+                </Grid>
+
+                <Grid size={6}>
+                  <Typography variant="body2" color="text.secondary">
+                    Sustainable (ESG)
+                  </Typography>
+                </Grid>
+                <Grid size={6}>
+                  <Chip
+                    label={currentEtf.sustainable ? "Yes" : "No"}
+                    color={currentEtf.sustainable ? "success" : "default"}
+                    size="small"
+                  />
+                </Grid>
+              </Grid>
+            </CardContent>
+          </Card>
         </Grid>
-        <Grid size={6}>
-          <div>
-            <Typography variant="h6">PREVIOUS 2 YIEAR YIELD</Typography>
-            <Typography variant="h6">{currentEtf.previous2YearYield}</Typography>
-          </div>
+
+        {/* SEZIONE 2: Dati di Mercato Odierni */}
+        <Grid size={{ xs: 12, md: 6 }}>
+          <Card elevation={2} sx={{ height: "100%", borderRadius: 2 }}>
+            <CardContent>
+              <Typography
+                variant="h6"
+                sx={{ fontWeight: "bold", mb: 2, color: "text.primary" }}
+              >
+                Market Data
+              </Typography>
+              <Divider sx={{ mb: 2 }} />
+
+              <Grid container spacing={2}>
+                <Grid size={6}>
+                  <Typography variant="body2" color="text.secondary">
+                    Daily Volume
+                  </Typography>
+                </Grid>
+                <Grid size={6}>
+                  <Typography variant="body1" sx={{ fontWeight: 500 }}>
+                    {currentEtf.regularMarketVolume?.toLocaleString() || "N/A"}
+                  </Typography>
+                </Grid>
+
+                <Grid size={6}>
+                  <Typography variant="body2" color="text.secondary">
+                    Market Day High
+                  </Typography>
+                </Grid>
+                <Grid size={6}>
+                  <Typography
+                    variant="body1"
+                    sx={{ fontWeight: 500, color: "success.dark" }}
+                  >
+                    {currentEtf.regularMarketDayHigh || "N/A"}
+                  </Typography>
+                </Grid>
+
+                <Grid size={6}>
+                  <Typography variant="body2" color="text.secondary">
+                    Market Day Low
+                  </Typography>
+                </Grid>
+                <Grid size={6}>
+                  <Typography
+                    variant="body1"
+                    sx={{ fontWeight: 500, color: "error.dark" }}
+                  >
+                    {currentEtf.regularMarketDayLow || "N/A"}
+                  </Typography>
+                </Grid>
+
+                <Grid size={6}>
+                  <Typography variant="body2" color="text.secondary">
+                    Status
+                  </Typography>
+                </Grid>
+                <Grid size={6}>
+                  <Chip
+                    label={currentEtf.active ? "Active" : "Inactive"}
+                    color={currentEtf.active ? "success" : "error"} // "success" (verde) è ancora meglio di "info" per lo stato Active!
+                    variant="filled" // Oppure "outlined" se preferisci solo il bordo colorato
+                    size="small"
+                  />
+                </Grid>
+              </Grid>
+            </CardContent>
+          </Card>
         </Grid>
-        <Grid size={6}>
-          <div>
-            <Typography variant="h6">PREVIOUS 3 YIEAR YIELD</Typography>
-            <Typography variant="h6">{currentEtf.previous3yearYield}</Typography>
-          </div>
+
+        {/* SEZIONE 3: Rendimenti (Yields) Performance */}
+        <Grid size={12}>
+          <Card elevation={2} sx={{ borderRadius: 2 }}>
+            <CardContent>
+              <Typography
+                variant="h6"
+                sx={{ fontWeight: "bold", mb: 2, color: "text.primary" }}
+              >
+                Performance & Yields
+              </Typography>
+              <Divider sx={{ mb: 3 }} />
+
+              <Grid container spacing={3} sx={{ textAlign: "center" }}>
+                <Grid size={{ xs: 6, sm: 3, md: 1.71 }}>
+                  <Typography
+                    variant="caption"
+                    color="text.secondary"
+                    display="block"
+                  >
+                    Daily
+                  </Typography>
+                  {renderYield(currentEtf.dailyYield)}
+                </Grid>
+                <Grid size={{ xs: 6, sm: 3, md: 1.71 }}>
+                  <Typography
+                    variant="caption"
+                    color="text.secondary"
+                    display="block"
+                  >
+                    1 Month
+                  </Typography>
+                  {renderYield(currentEtf.m1yield)}
+                </Grid>
+                <Grid size={{ xs: 6, sm: 3, md: 1.71 }}>
+                  <Typography
+                    variant="caption"
+                    color="text.secondary"
+                    display="block"
+                  >
+                    3 Months
+                  </Typography>
+                  {renderYield(currentEtf.m3yield)}
+                </Grid>
+                <Grid size={{ xs: 6, sm: 3, md: 1.71 }}>
+                  <Typography
+                    variant="caption"
+                    color="text.secondary"
+                    display="block"
+                  >
+                    6 Months
+                  </Typography>
+                  {renderYield(currentEtf.m6yield)}
+                </Grid>
+                <Grid size={{ xs: 6, sm: 3, md: 1.71 }}>
+                  <Typography
+                    variant="caption"
+                    color="text.secondary"
+                    display="block"
+                  >
+                    1 Year
+                  </Typography>
+                  {renderYield(currentEtf.y1Yield)}
+                </Grid>
+                <Grid size={{ xs: 6, sm: 3, md: 1.71 }}>
+                  <Typography
+                    variant="caption"
+                    color="text.secondary"
+                    display="block"
+                  >
+                    3 Years
+                  </Typography>
+                  {renderYield(currentEtf.y3Yield)}
+                </Grid>
+                <Grid size={{ xs: 6, sm: 3, md: 1.71 }}>
+                  <Typography
+                    variant="caption"
+                    color="text.secondary"
+                    display="block"
+                  >
+                    5 Years
+                  </Typography>
+                  {renderYield(currentEtf.y5Yield)}
+                </Grid>
+              </Grid>
+              <Typography
+                variant="subtitle2"
+                sx={{
+                  fontWeight: "bold",
+                  mt: 4,
+                  mb: 2,
+                  color: "text.secondary",
+                }}
+              >
+                Historical Calendar Year Performance
+              </Typography>
+              <Divider sx={{ mb: 3 }} />
+
+              <Grid container spacing={3} sx={{ textAlign: "center" }}>
+                <Grid size={{ xs: 4 }}>
+                  <Typography
+                    variant="caption"
+                    color="text.secondary"
+                    display="block"
+                  >
+                    Previous 1 Year
+                  </Typography>
+                  {renderYield(currentEtf.previous1YearYield)}
+                </Grid>
+
+                <Grid size={{ xs: 4 }}>
+                  <Typography
+                    variant="caption"
+                    color="text.secondary"
+                    display="block"
+                  >
+                    Previous 2 Years
+                  </Typography>
+                  {renderYield(currentEtf.previous2YearYield)}
+                </Grid>
+
+                <Grid size={{ xs: 4 }}>
+                  <Typography
+                    variant="caption"
+                    color="text.secondary"
+                    display="block"
+                  >
+                    Previous 3 Years
+                  </Typography>
+                  {renderYield(currentEtf.previous3yearYield)}
+                </Grid>
+              </Grid>
+            </CardContent>
+          </Card>
         </Grid>
       </Grid>
     </Box>
