@@ -6,7 +6,7 @@ import {Registration} from "./pages/registration";
 import {useState,createContext} from 'react';
 import {Login} from './pages/login';
 import {EditAlert} from './pages/editAlert';
-import {UserData} from './store/user-data';
+import {Activation} from './pages/account-activation'
 import {Watchlist} from './pages/watchlist';
 
 
@@ -31,6 +31,7 @@ function App() {
           <Route path="/login" element={<Login/>}></Route>
           <Route path="/watchlist" element={<Watchlist/>}></Route>
           <Route path="/alert" element={<EditAlert/>}></Route>
+          <Route path="/activation" element={<Activation/>}></Route>
         </Routes>
       </Router>
       </AppContext.Provider>

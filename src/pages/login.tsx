@@ -1,135 +1,227 @@
 import { useNavigate } from "react-router-dom";
 import { useContext, useState } from "react";
 import { AppContext } from "../App";
-import { Typography, Button, TextField, Grid, Paper, Avatar, Link, FormControlLabel, Checkbox, Box, FormControl, FormLabel, FormGroup, Stack, Rating,Alert } from '@mui/material';
-import { AccountCircle } from '@mui/icons-material';
+import { 
+  Typography, 
+  Button, 
+  TextField, 
+  Paper, 
+  Link, 
+  Box, 
+  Stack, 
+  Alert, 
+  CircularProgress,
+  Container 
+} from '@mui/material';
 import axios from 'axios';
 
 export const Login = () => {
+  const { setUserData } = useContext(AppContext);
+  const navigate = useNavigate();
 
-    const { setUserData } = useContext(AppContext);
+  
+  const [loginEmail, setLoginEmail] = useState("");
+  const [password, setPassword] = useState("");
 
-    const navigate = useNavigate();
+  
+  const [emailError, setEmailError] = useState("");
+  const [passwordError, setPasswordError] = useState("");
 
-    let [loginEmail, setLoginEmail] = useState("");
-    let [password, setPassword] = useState("");
-    let [emailError,setEmailError] = useState("");
-    let [passwordError,setPasswordError] = useState("");
+  
+  const [loading, setLoading] = useState(false);
+  const [loginError, setLoginError] = useState("");
+  
 
-    let [loginError, setLoginError] = useState("");
+  const [isAccountInactive, setIsAccountInactive] = useState(false);
 
+ 
+  const handleEmailBlur = () => {
+    if (!loginEmail) {
+      setEmailError("Email is required");
+    } else if (!/\S+@\S+\.\S+/.test(loginEmail)) {
+      setEmailError("Please enter a valid email address");
+    }
+  };
 
-        const changeLoginEmail = (event: any) => {
-        setLoginEmail(event.target.value);
-       
+  const handlePasswordBlur = () => {
+    if (!password) {
+      setPasswordError("Password is required");
+    }
+  };
+
+  const doSignIn = async () => {
+    setLoading(true);
+    setLoginError("");
+    setIsAccountInactive(false); 
+    const loginRequest = {
+      email: loginEmail,
+      password: password
     };
 
-    const changePassword = (event: any) => {
-        setPassword(event.target.value);
-        
-    }
+    axios.post("http://localhost:8081/api/v1/auth/login", loginRequest)
+      .then((response: any) => {
+        setLoading(false);
 
-       const doSignIn = async()=>{
-        const loginRequest = {
-            email: loginEmail,
-            password: password
+        if (response.data.refreshToken) {
+          localStorage.setItem("refreshToken", response.data.refreshToken);
+        }
+
+        let userData = {
+          jwtToken: response.data.token 
         };
 
-        console.log(loginRequest);
+        setUserData(userData);
+        navigate("/etf"); 
+      })
+      .catch((error: any) => {
+        setLoading(false);
+        console.error("Login error:", error);
 
-        axios.post("http://localhost:8081/api/auth/authenticate", loginRequest)
-        .then((response:any) => {
-
-            console.log(response);
-
-        let userData={
-            userId:response.data.userId,
-            jwtToken:response.data.token,
-            refreshToken:response.data.refreshToken
+        if (error.response) {
+          
+          if (error.response.status === 403) {
+            setIsAccountInactive(true);
+          
+            const backendMessage = error.response.data && typeof error.response.data === 'string'
+              ? error.response.data
+              : error.response.data?.message || "Account is not activated";
+            
+            setLoginError(backendMessage);
+          } else {
+            
+            const backendMessage = typeof error.response.data === 'string' 
+              ? error.response.data 
+              : error.response.data?.message || "Invalid email or password.";
+            
+            setLoginError(backendMessage);
+          }
+        } else {
+          setLoginError("Server communication error.");
         }
+      });
+  };
 
-            setLoginError(""); 
-            setUserData(userData);
-            navigate("/");
-        })
-        .catch((error:any) => {
+  
+  const signIn = () => {
+    let hasError = false;
 
-            console.log("errore con il login");
-            console.log(error);
-            setLoginError("username or password not correct"); 
-        })
+    if (!loginEmail) {
+      setEmailError("Email is required");
+      hasError = true;
+    } else if (!/\S+@\S+\.\S+/.test(loginEmail)) {
+      setEmailError("Please enter a valid email address");
+      hasError = true;
     }
 
+    if (!password) {
+      setPasswordError("Password is required");
+      hasError = true;
+    }
 
-        const signIn =  () => {
+    if (!hasError) {
+      doSignIn();
+    }
+  };
 
-
-        let error=false;
-
-        if(loginEmail===""){
-            error=true;
-            setEmailError("email is required");
-        }else{
-            setEmailError("");
-        }
+  return (
+    <Container component="main" maxWidth="xs">
+      <Box sx={{ marginTop: 8, display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
         
-        if(password===""){
-            error=true;
-            setPasswordError("Password is required");
-        }else{
-            setPasswordError("");
-        }
+      
+        {loginError && (
+          <Stack sx={{ width: '100%', mb: 2 }} spacing={2}>
+            {isAccountInactive ? (
+            
+              <Alert severity='warning' onClose={() => { setLoginError(""); setIsAccountInactive(false); }}>
+                {loginError}.{" "}
+                <Link 
+                  component="button" 
+                  type="button" 
+                  onClick={() => {
+                 
+                    setUserData({ email: loginEmail, isFromLogin: true });
+                 
+                    navigate("/activation");
+                  }} 
+                  sx={{ fontWeight: 'bold', color: 'warning.dark', textDecoration: 'underline', verticalAlign: 'baseline' }}
+                >
+                  Verify your account here
+                </Link>
+              </Alert>
+            ) : (
+              
+              <Alert severity='error' onClose={() => setLoginError("")}>
+                {loginError}
+              </Alert>
+            )}
+          </Stack>
+        )}
 
-        if(!error){
+        <Paper elevation={4} sx={{ p: 4, width: '100%', borderRadius: 2 }}>
+          <Typography component="h1" variant="h5" sx={{ textAlign: 'center', fontWeight: 'bold', mb: 3 }}>
+            Sign In
+          </Typography>
+          
+          <Box component="form" noValidate sx={{ mt: 1 }}>
+            <TextField
+              margin="normal"
+              required
+              fullWidth
+              label="Email Address"
+              autoComplete="email"
+              autoFocus
+              value={loginEmail}
+              onChange={(e) => setLoginEmail(e.target.value)}
+              onBlur={handleEmailBlur}
+              onFocus={() => setEmailError("")} 
+              error={!!emailError}
+              helperText={emailError}
+              disabled={loading}
+            />
+            
+            <TextField
+              margin="normal"
+              required
+              fullWidth
+              label="Password"
+              type="password"
+              autoComplete="current-password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              onBlur={handlePasswordBlur}
+              onFocus={() => setPasswordError("")}
+              error={!!passwordError}
+              helperText={passwordError}
+              disabled={loading}
+            />
 
-            doSignIn();
-        }     
-    }
+            <Button
+              fullWidth
+              variant="contained"
+              color="primary"
+              disabled={loading}
+              sx={{ mt: 3, mb: 2, p: 1.2, fontWeight: 'bold' }}
+              onClick={signIn}
+            >
+              {loading ? <CircularProgress size={24} color="inherit" /> : "Sign In"}
+            </Button>
 
-    const paperStyle = { padding: 20, height: '70vh', width: 280, margin: "3rem auto" };
-    const spacingStyle = { margin: "0.5rem 0" };
-    const homeButtonStyle = { margin: "1rem 0", whith: 300 };
-
-
-     return (
-
-        <Grid>
-            {
-                loginError != "" ?
-                    <Stack spacing={2}>
-                        <Alert severity='error' variant='standard' onClose={() => { setLoginError("") }}>{loginError}</Alert>
-                    </Stack> : null
-            }
-            <Paper elevation={10} style={paperStyle}>
-                <Grid container direction="column" alignItems="center" justifyContent="center">
-                    <Avatar><AccountCircle /></Avatar>
-                    <h2>Sign in</h2>
-                </Grid>
-                <TextField label="Email" placeholder="Enter email" fullWidth required style={spacingStyle} value={loginEmail} onChange={changeLoginEmail} 
-                error={emailError!==""} helperText={emailError!==""?"Please enter username":null}/>
-                <TextField label="Password" placeholder="Enter password" type="password" fullWidth required style={spacingStyle} value={password} onChange={changePassword} 
-                error={passwordError!==""} helperText={passwordError!==""?"Please enter password":null}/>
-                <FormControlLabel
-                    control={<Checkbox name="checkedB" color="primary" />} label="Remember me"
-                ></FormControlLabel>
-                <Button type="submit" color="primary" fullWidth variant="contained" style={spacingStyle}
-                    onClick={signIn}>Sign in</Button>
-                <Typography>
-                    <Link component="button" onClick={() => console.log("miao")}>Forgot password ?
-                    </Link>
-                </Typography>
-                <Typography>Do you have an account ?
-                    <Link component="button" onClick={() => navigate("/registration")}> Sign up
-                    </Link>
-                </Typography>
-            </Paper>
-        </Grid>
-
-
-
-
-    )
-
-
-    
-}
+            <Box sx={{ textAlign: 'center', mt: 2 }}>
+              <Typography variant="body2" color="text.secondary">
+                Don't have an account?{" "}
+                <Link 
+                  component="button" 
+                  type="button" 
+                  onClick={() => navigate("/registration")} 
+                  sx={{ fontWeight: 'bold', textDecoration: 'none' }}
+                >
+                  Sign Up
+                </Link>
+              </Typography>
+            </Box>
+          </Box>
+        </Paper>
+      </Box>
+    </Container>
+  );
+};
