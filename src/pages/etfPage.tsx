@@ -81,16 +81,18 @@ const searchData = {
 
   const [searchDialogOpen, setSearchDialogOpen] = useState(false);
 
-  useEffect(() => {
+useEffect(() => {
 
-    if (!searchParams.get('page') || !searchParams.get('sortField')) {
-      updateUrlParams(searchData);
-      return; 
-    }
-    
-    loadData(searchData);
-    
-  }, [searchParams]);
+  if (isCheckingAuth) return;
+
+  if (!searchParams.get('page') || !searchParams.get('sortField')) {
+    updateUrlParams(searchData);
+    return; 
+  }
+  
+  loadData(searchData);
+  
+}, [searchParams, isCheckingAuth]);
 
 
   const updateUrlParams = (newFilters: any) => {
@@ -107,51 +109,92 @@ const searchData = {
     setSearchParams(params);
   };
 
-  const loadData = (searchData: any) => {
-    const loadUrl = "http://localhost:8081/api/v1/etfs";
+  const loadData = async (searchData: any, isRetry = false) => {
 
-    const paramsForBackend = {
-      ...searchData,
+  const loadUrl = "http://localhost:8081/api/v1/etfs";
 
-      sustainable:
-        searchData.sustainable === ""
-          ? null
-          : searchData.sustainable === "true",
-      typeFilter: searchData.typeFilter === "" ? null : searchData.typeFilter,
-    };
-
-    Object.keys(paramsForBackend).forEach((key) => {
-      const value = paramsForBackend[key];
-      if (value === "" || value === null || value === undefined) {
-        delete paramsForBackend[key];
-      }
-    });
-
-
-
-    axios
-      .get(loadUrl, {
-        params: {
-          ...paramsForBackend,
-        },
-      })
-      .then(
-        (response) => {
-          console.log(response);
-          setTableData(response.data.etfList);
-          setPageNumber(response.data.pages);
-          setTotalItems(response.data.total);
-          setFromItem(response.data.fromItem);
-          setToItem(response.data.toItem);
-        },
-        (error) => {
-          console.log(error);
-        },
-      );
+ 
+  const paramsForBackend = {
+    ...searchData,
+    sustainable:
+      searchData.sustainable === ""
+        ? null
+        : searchData.sustainable === "true",
+    typeFilter: searchData.typeFilter === "" ? null : searchData.typeFilter,
   };
 
+  Object.keys(paramsForBackend).forEach((key) => {
+    const value = paramsForBackend[key];
+    if (value === "" || value === null || value === undefined) {
+      delete paramsForBackend[key];
+    }
+  });
+
+ 
+  const config: any = {
+    params: { ...paramsForBackend },
+  };
+
+  if (userData?.jwtToken) {
+    config.headers = {
+      Authorization: "Bearer " + userData.jwtToken,
+    };
+  }
+
+  try {
+    const response = await axios.get(loadUrl, config);
+    console.log("ETF list loaded:", response.data);
+
+    
+    setTableData(response.data.etfList);
+    setPageNumber(response.data.pages);
+    setTotalItems(response.data.total);
+    setFromItem(response.data.fromItem);
+    setToItem(response.data.toItem);
+
+  } catch (error: any) {
+    console.error("Error loading ETF list:", error);
+
+   
+    if (error.response?.status === 401 && !isRetry) {
+      console.log("Access Token scaduto durante il caricamento della lista. Tento il refresh...");
+      
+      try {
+        const currentRefreshToken = localStorage.getItem("refreshToken");
+        const refreshResponse = await axios.post("http://localhost:8081/api/v1/auth/refresh-token", {
+          token: currentRefreshToken
+        });
+
+        const newAccessToken = refreshResponse.data.token;
+        if (refreshResponse.data.refreshToken) {
+          localStorage.setItem("refreshToken", refreshResponse.data.refreshToken);
+        }
+
+        
+        setUserData({ ...userData, jwtToken: newAccessToken });
+
+        console.log("Refresh completato con successo. Rilancio loadData...");
+      
+        await loadData(searchData, true);
+
+      } catch (refreshError) {
+        console.error("Anche il refresh token è fallito o scaduto. Sloggo l'utente in background.");
+      
+        setUserData(null);
+        localStorage.clear();
+        
+        
+        await loadData(searchData, true);
+      }
+    } else {
+     
+      console.error("Impossibile caricare i dati della tabella.");
+    }
+  }
+};
+
   const handleApplyFilters = (newFilters: any) => {
-   // setSearchData(newFilters);
+
 
   updateUrlParams({
       ...searchData,
@@ -159,8 +202,6 @@ const searchData = {
       page: 1
     });
 
-
-    //loadData(newFilters);
   };
 
   const changePage = (num: number) => {
@@ -168,11 +209,10 @@ const searchData = {
 
    updateUrlParams({
       ...searchData,
-      page: searchData.page + num, // Semplice operazione matematica
+      page: searchData.page + num, 
     });
 
-    //setSearchData(updatedSearchData);
-    //loadData(updatedSearchData);
+   
   };
 
   const handleSortRequest = (columnName: string) => {
