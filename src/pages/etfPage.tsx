@@ -40,7 +40,7 @@ const COLUMNS: ColumnConfig[] = [
 export const EtfPage = () => {
   const navigate = useNavigate();
 
-  const { userData } = useContext(AppContext);
+  const { userData ,setUserData,isCheckingAuth} = useContext(AppContext);
 
   const [pageNumber, setPageNumber] = useState(0);
   const [totalItems, setTotalItems] = useState(100);
@@ -110,11 +110,6 @@ const searchData = {
   const loadData = (searchData: any) => {
     const loadUrl = "http://localhost:8081/api/v1/etfs";
 
-    console.log("searchData:");
-    console.log(searchData);
-
-    console.log(loadUrl);
-
     const paramsForBackend = {
       ...searchData,
 
@@ -133,13 +128,6 @@ const searchData = {
     });
 
 
-
-
-    /*
-    const config=userData!=null?{
-      headers: {
-        'Authorization': "Bearer " + userData.jwtToken
-      }}:{}; */
 
     axios
       .get(loadUrl, {
@@ -207,65 +195,166 @@ const showEtf = (etfData: any) => {
   navigate(`/etf/${etfData.id}`);
 };
 
-  const removeFromWatchlist = (etfData: any) => {
-    let loadUrl = "http://localhost:8081/api/watchlist";
 
-    let config = {
-      headers: {
-        Authorization: "Bearer " + userData.jwtToken,
-      },
-      data: {
-        idList: [etfData.watchlistId],
-      },
-    };
 
-    axios.delete(loadUrl, config).then((response: any) => {
-      console.log(response);
+const removeFromWatchlist = async (etfData: any, isRetry = false) => {
+  
+  if (isCheckingAuth) return;
 
-      const updatedList = tableData.map((m) => {
-        if (m.id === etfData.id) {
-          return { ...m, watchlistId: null };
-        }
-        return m;
-      });
+ 
+  if (!userData?.jwtToken) {
+    console.log("Utente non loggato. Reindirizzamento al login...");
+    navigate("/login");
+    return;
+  }
 
-      console.log(updatedList);
+  let loadUrl = "http://localhost:8081/api/v1/watchlists?ids=" + etfData.watchlistId;
 
-      setTableData(updatedList);
-    });
+  const config = {
+    headers: {
+      Authorization: "Bearer " + userData.jwtToken,
+    }
   };
 
-  const addToWatchlist = (etfData: any) => {
-    let loadUrl = "http://localhost:8081/api/watchlist";
+  try {
+    const response = await axios.delete(loadUrl, config);
+    console.log("Removed from watchlist:", response);
 
-    const config = {
-      headers: {
-        Authorization: "Bearer " + userData.jwtToken,
-      },
-    };
-
-    let json = {
-      etfId: etfData.id,
-      userId: userData.userId,
-    };
-
-    axios.post(loadUrl, json, config).then((response) => {
-      console.log(response);
-
-      const updatedList = tableData.map((m) => {
-        if (m.id === etfData.id) {
-          return { ...m, watchlistId: response.data };
-        }
-        return m;
-      });
-
-      console.log(updatedList);
-
-      setTableData(updatedList);
+  
+    const updatedList = tableData.map((m: any) => {
+      if (m.id === etfData.id) {
+        return { ...m, watchlistId: null };
+      }
+      return m;
     });
+
+    console.log("Updated Table Data after removal:", updatedList);
+    setTableData(updatedList);
+
+  } catch (error: any) {
+    console.error("Error removing from watchlist:", error);
+
+   
+    if (error.response?.status === 401 && !isRetry) {
+      console.log("Access Token scaduto durante la rimozione dalla watchlist. Tento il refresh...");
+      
+      try {
+        const currentRefreshToken = localStorage.getItem("refreshToken");
+        const refreshResponse = await axios.post("http://localhost:8081/api/v1/auth/refresh-token", {
+          token: currentRefreshToken 
+        });
+
+        const newAccessToken = refreshResponse.data.token;
+        if (refreshResponse.data.refreshToken) {
+          localStorage.setItem("refreshToken", refreshResponse.data.refreshToken);
+        }
+
+     
+        setUserData({ ...userData, jwtToken: newAccessToken });
+
+        console.log("Refresh completato con successo. Rilancio removeFromWatchlist...");
+      
+
+        await removeFromWatchlist(etfData, true);
+
+      } catch (refreshError) {
+        console.error("Anche il refresh token è fallito. Sloggo l'utente.");
+        setUserData(null);
+        localStorage.clear();
+        navigate("/login");
+      }
+    } else {
+      console.error("Chiamata fallita per motivi diversi dal 401 o secondo tentativo fallito.");
+    }
+  }
+};
+
+const addToWatchlist = async (etfData: any, isRetry = false) => {
+
+
+  if (isCheckingAuth) return;
+
+    if (!userData?.jwtToken) {
+    console.log("Utente non loggato. Reindirizzamento al login...");
+    navigate("/login");
+    return;
+  }
+
+
+  let loadUrl = "http://localhost:8081/api/v1/watchlists";
+
+  const config = {
+    headers: {
+      Authorization: "Bearer " + userData.jwtToken,
+    },
   };
 
-    const openSearchDialog = () => {
+  let json = {
+    etfId: etfData.id
+  };
+
+  try {
+    const response = await axios.post(loadUrl, json, config);
+    console.log("Added to watchlist:", response);
+
+    // Aggiorna lo stato della tabella per accendere la stellina/bottone dell'ETF corrente
+    const updatedList = tableData.map((m: any) => {
+      if (m.id === etfData.id) {
+        // response.data contiene l'ID della riga watchlist appena creata
+        return { ...m, watchlistId: response.data }; 
+      }
+      return m;
+    });
+
+    console.log("Updated Table Data:", updatedList);
+    setTableData(updatedList);
+
+  } catch (error: any) {
+    console.error("Error adding to watchlist:", error);
+
+    // Gestione Token Scaduto (401)
+    if (error.response?.status === 401 && !isRetry) {
+      console.log("Access Token scaduto durante l'aggiunta alla watchlist. Tento il refresh...");
+      
+      try {
+        const currentRefreshToken = localStorage.getItem("refreshToken");
+
+        const refreshResponse = await axios.post("http://localhost:8081/api/v1/auth/refresh-token", {
+          token: currentRefreshToken // o refreshToken a seconda del backend
+        });
+
+        const newAccessToken = refreshResponse.data.token;
+        if (refreshResponse.data.refreshToken) {
+          localStorage.setItem("refreshToken", refreshResponse.data.refreshToken);
+        }
+
+        setUserData({ ...userData, jwtToken: newAccessToken });
+
+        console.log("Refresh completato con successo. Rilancio addToWatchlist...");
+  
+
+        await addToWatchlist(etfData, true);
+
+      } catch (refreshError) {
+        console.error("Anche il refresh token è fallito. Sloggo l'utente.");
+      
+
+        setUserData(null);
+        localStorage.clear();
+        navigate("/login");
+
+      }
+    } else {
+      // Qui puoi gestire un eventuale stato di errore visivo sulla pagina se la chiamata fallisce per altri motivi
+      console.error("Chiamata fallita per motivi diversi dal 401 o secondo tentativo fallito.");
+    }
+  }
+};
+
+
+
+
+  const openSearchDialog = () => {
     //setSearchDialogOpen(true);
     console.log("open search dialog");
 
@@ -337,7 +426,7 @@ const showEtf = (etfData: any) => {
               ))}
 
               
-              {userData != null && <TableCell>Add to Watchlist</TableCell>}
+              <TableCell>Add to Watchlist</TableCell>
             </TableRow>
           </TableHead>
           <TableBody>
@@ -358,7 +447,7 @@ const showEtf = (etfData: any) => {
                 <TableCell>{row.isin}</TableCell>
                 <TableCell>{row.symbol}</TableCell>
 
-                {row.watchlistId === null && userData != null ? (
+                {row.watchlistId === null ? (
                   <TableCell>
                     <Button
                       type="submit"
@@ -369,7 +458,7 @@ const showEtf = (etfData: any) => {
                       ADD
                     </Button>
                   </TableCell>
-                ) : row.watchlistId != null && userData != null ? (
+                ) : row.watchlistId != null ? (
                   <TableCell>
                     <Button
                       type="submit"
