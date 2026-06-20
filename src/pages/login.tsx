@@ -1,5 +1,5 @@
-import { useNavigate } from "react-router-dom";
-import { useContext, useState } from "react";
+import { useNavigate, useLocation } from "react-router-dom"; // <-- AGGIUNTO useLocation
+import { useContext, useState, useEffect } from "react";     // <-- AGGIUNTO useEffect
 import { AppContext } from "../App";
 import { 
   Typography, 
@@ -18,23 +18,35 @@ import axios from 'axios';
 export const Login = () => {
   const { setUserData } = useContext(AppContext);
   const navigate = useNavigate();
+  const location = useLocation(); // <-- Inizializziamo lo stato della navigazione attuale
 
-  
   const [loginEmail, setLoginEmail] = useState("");
   const [password, setPassword] = useState("");
 
-  
   const [emailError, setEmailError] = useState("");
   const [passwordError, setPasswordError] = useState("");
 
-  
   const [loading, setLoading] = useState(false);
   const [loginError, setLoginError] = useState("");
   
+  // NUOVO: Stato per gestire l'avviso di password modificata con successo
+  const [successMsg, setSuccessMsg] = useState("");
 
   const [isAccountInactive, setIsAccountInactive] = useState(false);
 
- 
+  // --- NUOVO: INTERCETTAZIONE DEL REFRESH E REINDERIZZAMENTO DA CAMBIO PASSWORD ---
+  useEffect(() => {
+    if (location.state?.passwordChangedSuccess) {
+
+      console.log("password changed ok");
+
+      setSuccessMsg("Password updated successfully! Please log in again with your new credentials.");
+      
+      // Puliamo lo stato della cronologia per evitare che l'alert rimanga fisso facendo F5 sulla pagina
+      window.history.replaceState({}, document.title);
+    }
+  }, [location]);
+
   const handleEmailBlur = () => {
     if (!loginEmail) {
       setEmailError("Email is required");
@@ -78,21 +90,16 @@ export const Login = () => {
         console.error("Login error:", error);
 
         if (error.response) {
-          
           if (error.response.status === 403) {
             setIsAccountInactive(true);
-          
             const backendMessage = error.response.data && typeof error.response.data === 'string'
               ? error.response.data
               : error.response.data?.message || "Account is not activated";
-            
             setLoginError(backendMessage);
           } else {
-            
             const backendMessage = typeof error.response.data === 'string' 
               ? error.response.data 
               : error.response.data?.message || "Invalid email or password.";
-            
             setLoginError(backendMessage);
           }
         } else {
@@ -101,7 +108,6 @@ export const Login = () => {
       });
   };
 
-  
   const signIn = () => {
     let hasError = false;
 
@@ -127,20 +133,25 @@ export const Login = () => {
     <Container component="main" maxWidth="xs">
       <Box sx={{ marginTop: 8, display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
         
-      
+        {/* --- NUOVO: MOSTRA IL POPUP DI SUCCESSO DEL CAMBIO PASSWORD --- */}
+        {successMsg && (
+          <Stack sx={{ width: '100%', mb: 2 }}>
+            <Alert severity="success" onClose={() => setSuccessMsg("")}>
+              {successMsg}
+            </Alert>
+          </Stack>
+        )}
+
         {loginError && (
           <Stack sx={{ width: '100%', mb: 2 }} spacing={2}>
             {isAccountInactive ? (
-            
               <Alert severity='warning' onClose={() => { setLoginError(""); setIsAccountInactive(false); }}>
                 {loginError}.{" "}
                 <Link 
                   component="button" 
                   type="button" 
                   onClick={() => {
-                 
                     setUserData({ email: loginEmail, isFromLogin: true });
-                 
                     navigate("/activation");
                   }} 
                   sx={{ fontWeight: 'bold', color: 'warning.dark', textDecoration: 'underline', verticalAlign: 'baseline' }}
@@ -149,7 +160,6 @@ export const Login = () => {
                 </Link>
               </Alert>
             ) : (
-              
               <Alert severity='error' onClose={() => setLoginError("")}>
                 {loginError}
               </Alert>
@@ -173,7 +183,10 @@ export const Login = () => {
               value={loginEmail}
               onChange={(e) => setLoginEmail(e.target.value)}
               onBlur={handleEmailBlur}
-              onFocus={() => setEmailError("")} 
+              onFocus={() => {
+                setEmailError("");
+                setSuccessMsg(""); // Puliamo il messaggio se l'utente inizia a digitare
+              }} 
               error={!!emailError}
               helperText={emailError}
               disabled={loading}
@@ -189,7 +202,10 @@ export const Login = () => {
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               onBlur={handlePasswordBlur}
-              onFocus={() => setPasswordError("")}
+              onFocus={() => {
+                setPasswordError("");
+                setSuccessMsg(""); // Puliamo il messaggio se l'utente inizia a digitare
+              }}
               error={!!passwordError}
               helperText={passwordError}
               disabled={loading}

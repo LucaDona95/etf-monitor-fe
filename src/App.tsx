@@ -8,6 +8,8 @@ import {Login} from './pages/login';
 import {EditAlert} from './pages/editAlert';
 import {Activation} from './pages/account-activation'
 import {Watchlist} from './pages/watchlist';
+import {UserProfile} from './pages/profile';
+import {ChangePassword} from './pages/new-password';
 
 
 export const AppContext=createContext<any>({});
@@ -17,10 +19,12 @@ function App() {
 
   const [userData,setUserData]=useState(null);
 
+  const [isCheckingAuth, setIsCheckingAuth] = useState(true);
+
   return (
     <div>
      
-      <AppContext.Provider value={{userData,setUserData}}>
+      <AppContext.Provider value={{userData,setUserData,isCheckingAuth, setIsCheckingAuth}}>
       
       <Router>
         <MuiNavbar />
@@ -32,6 +36,9 @@ function App() {
           <Route path="/watchlist" element={<Watchlist/>}></Route>
           <Route path="/alert" element={<EditAlert/>}></Route>
           <Route path="/activation" element={<Activation/>}></Route>
+          <Route path="/profile" element={<UserProfile/>}></Route>
+          <Route path="/change-password" element={<ChangePassword/>}></Route>
+          
         </Routes>
       </Router>
       </AppContext.Provider>
