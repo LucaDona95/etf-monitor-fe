@@ -131,7 +131,10 @@ export const Watchlist = () => {
     navigate(`/etf/${etfData.id}`);
   };
 
-  
+  const toWatchlistAletList = (etfData: any) => {
+    navigate(`/alert/${etfData.watchlistId}`);
+  };
+
   const handleSelectAllClick = (event: React.ChangeEvent<HTMLInputElement>) => {
     if (event.target.checked) {
      
@@ -282,6 +285,7 @@ export const Watchlist = () => {
                   )}
                 </TableCell>
               ))}
+              <TableCell>Edit Alerts</TableCell>
             </TableRow>
           </TableHead>
           <TableBody>
@@ -317,6 +321,17 @@ export const Watchlist = () => {
                   <TableCell>{row.type}</TableCell>
                   <TableCell>{row.isin}</TableCell>
                   <TableCell>{row.symbol}</TableCell>
+
+                  <TableCell>
+                    <Button
+                      type="submit"
+                      variant="contained"
+                      color="primary"
+                      onClick={() => toWatchlistAletList(row)}
+                    >
+                      GO
+                    </Button>
+                  </TableCell>
                 </TableRow>
               );
             })}

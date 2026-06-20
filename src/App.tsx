@@ -34,7 +34,7 @@ function App() {
           <Route path="/registration" element={<Registration />}></Route>
           <Route path="/login" element={<Login/>}></Route>
           <Route path="/watchlist" element={<Watchlist/>}></Route>
-          <Route path="/alert" element={<EditAlert/>}></Route>
+          <Route path="/alert/:id" element={<EditAlert/>}></Route>
           <Route path="/activation" element={<Activation/>}></Route>
           <Route path="/profile" element={<UserProfile/>}></Route>
           <Route path="/change-password" element={<ChangePassword/>}></Route>
