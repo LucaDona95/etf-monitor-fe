@@ -22,7 +22,7 @@ const yieldIntervalList = [
   { value: "Y5", label: "5 anni" },
 ];
 
-const TerFormat = React.forwardRef<NumericFormatProps, CustomProps>(
+const PercentageFormat = React.forwardRef<HTMLInputElement, CustomProps>(
   function NumericFormatCustom(props, ref) {
     const { onChange, ...other } = props;
 
@@ -34,15 +34,47 @@ const TerFormat = React.forwardRef<NumericFormatProps, CustomProps>(
           onChange({
             target: {
               name: props.name,
-              value: values.value,
+              value: values.value || "",
             },
           });
         }}
         valueIsNumericString
-        decimalScale={3}
+        decimalScale={2}
+        decimalSeparator="."
+        allowNegative={true}
+        isAllowed={(values) => {
+          const { floatValue } = values;
+          return floatValue === undefined ? true : floatValue <= 100 && floatValue >=-100;
+        }}
+      />
+    );
+  },
+);
+
+const AmountFormat = React.forwardRef<HTMLInputElement, CustomProps>(
+  function NumericFormatCustom(props, ref) {
+    const { onChange, ...other } = props;
+
+    return (
+      <NumericFormat
+        {...other}
+        getInputRef={ref}
+        onValueChange={(values) => {
+          onChange({
+            target: {
+              name: props.name,
+              value: values.value || "",
+            },
+          });
+        }}
+        valueIsNumericString
+        decimalScale={2}
         decimalSeparator="."
         allowNegative={false}
-        isAllowed={(values: any) => values.floatValue >= 0 || !values.floatValue}
+        isAllowed={(values) => {
+          
+          return true;
+        }}
       />
     );
   },
@@ -162,7 +194,7 @@ export const AlertDialog = (props: any) => {
                   fullWidth 
                   label='Price Threshold' 
                   variant="outlined"
-                  slotProps={{ input: { inputComponent: TerFormat as any } }}
+                  slotProps={{ input: { inputComponent: AmountFormat as any } }}
                   value={props.editingAlert.price || ''} 
                   onChange={(e: any) => {
                     props.setEditingAlert({ ...props.editingAlert, price: e.target.value });
@@ -178,7 +210,7 @@ export const AlertDialog = (props: any) => {
                   fullWidth 
                   label='Volume Threshold' 
                   variant="outlined"
-                  slotProps={{ input: { inputComponent: TerFormat as any } }}
+                  slotProps={{ input: { inputComponent: AmountFormat as any } }}
                   value={props.editingAlert.volume || ''} 
                   onChange={(e: any) => {
                     props.setEditingAlert({ ...props.editingAlert, volume: e.target.value });
@@ -195,7 +227,7 @@ export const AlertDialog = (props: any) => {
                     fullWidth 
                     label='Yield % Threshold' 
                     variant="outlined"
-                    slotProps={{ input: { inputComponent: TerFormat as any } }}
+                    slotProps={{ input: { inputComponent: PercentageFormat as any } }}
                     value={props.editingAlert.etfYield || ''} 
                     onChange={(e: any) => {
                       props.setEditingAlert({ ...props.editingAlert, etfYield: e.target.value });

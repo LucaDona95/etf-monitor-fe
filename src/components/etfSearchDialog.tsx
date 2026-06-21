@@ -25,7 +25,7 @@ interface CustomProps {
   name: string;
 }
 
-const PercentageFormat = React.forwardRef<HTMLInputElement, CustomProps>(
+const TerFormat = React.forwardRef<HTMLInputElement, CustomProps>(
   function NumericFormatCustom(props, ref) {
     const { onChange, ...other } = props;
 
@@ -48,6 +48,35 @@ const PercentageFormat = React.forwardRef<HTMLInputElement, CustomProps>(
         isAllowed={(values) => {
           const { floatValue } = values;
           return floatValue === undefined ? true : floatValue <= 100;
+        }}
+      />
+    );
+  },
+);
+
+const PercentageFormat = React.forwardRef<HTMLInputElement, CustomProps>(
+  function NumericFormatCustom(props, ref) {
+    const { onChange, ...other } = props;
+
+    return (
+      <NumericFormat
+        {...other}
+        getInputRef={ref}
+        onValueChange={(values) => {
+          onChange({
+            target: {
+              name: props.name,
+              value: values.value || "",
+            },
+          });
+        }}
+        valueIsNumericString
+        decimalScale={2}
+        decimalSeparator="."
+        allowNegative={true}
+        isAllowed={(values) => {
+          const { floatValue } = values;
+          return floatValue === undefined ? true : floatValue <= 100 && floatValue>=-100;
         }}
       />
     );
