@@ -167,8 +167,16 @@ export const EtfPage = () => {
     navigate(`/etf/${etfData.id}`);
   };
 
+  {/* RIPRISTINATA LOGICA ORIGINALE DI RIMOZIONE WATCHLIST */}
   const removeFromWatchlist = async (etfData: any, isRetry = false) => {
-    if (isCheckingAuth || !userData?.jwtToken) return;
+    if (isCheckingAuth) return;
+
+    if (!userData?.jwtToken) {
+      console.log("Utente non loggato. Reindirizzamento al login...");
+      navigate("/login");
+      return;
+    }
+
     let loadUrl = "http://localhost:8081/api/v1/watchlists?ids=" + etfData.watchlistId;
     const config = { headers: { Authorization: "Bearer " + userData.jwtToken } };
 
@@ -194,8 +202,16 @@ export const EtfPage = () => {
     }
   };
 
+  {/* RIPRISTINATA LOGICA ORIGINALE DI AGGIUNTA WATCHLIST */}
   const addToWatchlist = async (etfData: any, isRetry = false) => {
-    if (isCheckingAuth || !userData?.jwtToken) return;
+    if (isCheckingAuth) return;
+
+    if (!userData?.jwtToken) {
+      console.log("Utente non loggato. Reindirizzamento al login...");
+      navigate("/login");
+      return;
+    }
+
     let loadUrl = "http://localhost:8081/api/v1/watchlists";
     const config = { headers: { Authorization: "Bearer " + userData.jwtToken } };
     let json = { etfId: etfData.id };
@@ -262,18 +278,18 @@ export const EtfPage = () => {
   const paginationRange = fetchPageNumbers();
 
   return (
-    <Paper sx={{ width: "80%", overflow: "hidden", margin: "3rem auto", paddingBottom: "1rem" }}>
-      <Typography variant="h4" component="div" sx={{ flexGrow: 1, padding: "1rem" }}>
+    <Paper sx={{ width: { xs: "95%", md: "85%", lg: "80%" }, overflow: "hidden", margin: "2rem auto", paddingBottom: "1rem" }}>
+      <Typography variant="h4" component="div" sx={{ flexGrow: 1, padding: "1.5rem 1rem 1rem 1rem", fontWeight: "bold" }}>
         ETF SEARCH TABLE
       </Typography>
       
-      {/* Box Superiore: Adesso c'è solo il pulsante di ricerca, allineato a destra */}
-      <Box sx={{ margin: "0 10% 1rem 10%", display: "flex", justifyContent: "flex-end" }}>
+      {/* Box Superiore responsive */}
+      <Box sx={{ margin: "0 1rem 1.5rem 1rem", display: "flex", justifyContent: "flex-end" }}>
         <Button
-          type="submit"
           variant="contained"
           color="primary"
           onClick={() => setSearchDialogOpen(true)}
+          sx={{ width: { xs: "100%", sm: "auto" } }}
         >
           SEARCH ETF
         </Button>
@@ -285,12 +301,13 @@ export const EtfPage = () => {
         />
       </Box>
 
-      <TableContainer sx={{ maxHeight: "35rem" }}>
-        <Table stickyHeader aria-label="sticky table">
+      {/* Container della Tabella con scroll orizzontale nativo */}
+      <TableContainer sx={{ overflowX: "auto" }}>
+        <Table stickyHeader aria-label="sticky table" sx={{ minWidth: 800 }}>
           <TableHead>
             <TableRow>
               {COLUMNS.map((column) => (
-                <TableCell key={column.id}>
+                <TableCell key={column.id} sx={{ fontWeight: "bold" }}>
                   {column.sortKey ? (
                     <TableSortLabel
                       active={searchData.sortField === column.sortKey}
@@ -304,7 +321,7 @@ export const EtfPage = () => {
                   )}
                 </TableCell>
               ))}
-              <TableCell>Add to Watchlist</TableCell>
+              <TableCell sx={{ fontWeight: "bold" }}>Add to Watchlist</TableCell>
             </TableRow>
           </TableHead>
           <TableBody>
@@ -326,11 +343,11 @@ export const EtfPage = () => {
                 <TableCell>{row.symbol}</TableCell>
                 <TableCell>
                   {row.watchlistId === null ? (
-                    <Button type="submit" variant="outlined" color="primary" size="small" onClick={() => addToWatchlist(row)}>
+                    <Button variant="outlined" color="primary" size="small" onClick={() => addToWatchlist(row)}>
                       ADD
                     </Button>
                   ) : (
-                    <Button type="submit" variant="contained" color="secondary" size="small" onClick={() => removeFromWatchlist(row)}>
+                    <Button variant="contained" color="secondary" size="small" onClick={() => removeFromWatchlist(row)}>
                       REMOVE
                     </Button>
                   )}
@@ -341,9 +358,16 @@ export const EtfPage = () => {
         </Table>
       </TableContainer>
 
-      {/* --- BLOCCO DI PAGINAZIONE IN BASSO RE-INGEGNERIZZATO --- */}
+      {/* --- BLOCCO DI PAGINAZIONE IN BASSO RESPONSIVE --- */}
       {totalPages > 0 && (
-        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '1rem 2rem' }}>
+        <Box sx={{ 
+          display: 'flex', 
+          flexDirection: { xs: 'column', sm: 'row' }, 
+          justifyContent: 'space-between', 
+          alignItems: 'center', 
+          gap: 2,
+          padding: '1.5rem 1rem 0.5rem 1rem' 
+        }}>
           
           {/* CONTEGGIO ELEMENTI IN BASSO A SINISTRA */}
           <Typography variant="body2" color="text.secondary" sx={{ fontWeight: 500 }}>
@@ -352,7 +376,7 @@ export const EtfPage = () => {
 
           {/* PULSANTI NUMERICI IN BASSO A DESTRA */}
           {totalPages > 1 && (
-            <Box sx={{ display: 'flex', gap: '0.25rem', alignItems: 'center' }}>
+            <Box sx={{ display: 'flex', gap: '0.25rem', alignItems: 'center', flexWrap: 'wrap', justifyContent: 'center' }}>
               <Button
                 variant="outlined"
                 size="small"
