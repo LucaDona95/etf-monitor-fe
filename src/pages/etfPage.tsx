@@ -32,12 +32,12 @@ interface ColumnConfig {
 }
 
 const COLUMNS: ColumnConfig[] = [
-  { id: "name", label: "Nome del Fondo" },
-  { id: "fundSize", label: "Dim. del fondo", sortKey: "fundSize" },
+  { id: "name", label: "Fund name" },
+  { id: "fundSize", label: "Fund Size", sortKey: "fundSize" },
   { id: "ter", label: "TER", sortKey: "ter" },
-  { id: "y1Yield", label: "1A in %", sortKey: "y1Yield" },
+  { id: "y1Yield", label: "1Y in %", sortKey: "y1Yield" },
   { id: "price", label: "Price", sortKey: "regularMarketPrice" },
-  { id: "distribution", label: "Distribuzione" },
+  { id: "distribution", label: "Distribution" },
   { id: "isin", label: "ISIN", sortKey: "isin" },
   { id: "symbol", label: "Ticker", sortKey: "symbol" },
 ];
@@ -302,40 +302,54 @@ export const EtfPage = () => {
       sx={{ 
         width: { xs: "98%", md: "92%", lg: "85%" }, 
         overflow: "hidden", 
-        margin: "2rem auto", // Modificato il margine verticale (da 0.5rem a 2rem) per distanziare la tabella dal top/bottom pagina
+        margin: "2rem auto", 
         paddingBottom: "1rem" 
       }}
     >
-      <Typography 
-        variant="h4" 
-        component="div" 
+      {/* Header unificato: Allinea titolo e bottone sulla stessa linea */}
+      <Box 
         sx={{ 
-          flexGrow: 1, 
-          padding: "1.5rem 1rem 1rem 1rem", 
-          fontWeight: "bold",
-          fontSize: { xs: '1.5rem', sm: '2rem', md: '2.125rem' }
+          display: "flex", 
+          flexDirection: { xs: "column", sm: "row" }, 
+          justifyContent: "space-between", 
+          alignItems: { xs: "flex-start", sm: "center" }, 
+          gap: 2,
+          padding: "1.5rem 1.5rem 1rem 1.5rem" 
         }}
       >
-        ETF SEARCH
-      </Typography>
-      
-      <Box sx={{ margin: "0 1rem 1.5rem 1rem", display: "flex", justifyContent: "flex-end" }}>
+        <Typography 
+          variant="h4" 
+          component="div" 
+          sx={{ 
+            fontWeight: "bold",
+            fontSize: { xs: '1.5rem', sm: '1.8rem', md: '2rem' },
+            letterSpacing: "-0.5px"
+          }}
+        >
+          ETF LIST
+        </Typography>
+        
         <Button
           variant="contained"
           color="primary"
           startIcon={<SearchIcon />} 
           onClick={() => setSearchDialogOpen(true)}
-          sx={{ width: { xs: "100%", sm: "auto" }, fontWeight: "bold" }}
+          sx={{ 
+            width: { xs: "100%", sm: "auto" }, 
+            fontWeight: "bold",
+            px: 3 // Aumenta il padding orizzontale del bottone
+          }}
         >
-          SEARCH ETF
+          SEARCH
         </Button>
-        <EtfSearchDialog
-          open={searchDialogOpen}
-          onClose={() => setSearchDialogOpen(false)}
-          currentFilters={searchData}
-          onApplyFilters={handleApplyFilters}
-        />
       </Box>
+
+      <EtfSearchDialog
+        open={searchDialogOpen}
+        onClose={() => setSearchDialogOpen(false)}
+        currentFilters={searchData}
+        onApplyFilters={handleApplyFilters}
+      />
 
       <TableContainer sx={{ overflowX: "auto" }}>
         <Table stickyHeader aria-label="sticky table" sx={{ minWidth: { xs: '100%', sm: 800 } }}>
@@ -368,7 +382,7 @@ export const EtfPage = () => {
                   )}
                 </TableCell>
               ))}
-              <TableCell sx={{ fontWeight: "bold", padding: { xs: "10px 8px", md: "16px 12px" } }}>Watchlist</TableCell>
+              <TableCell sx={{ fontWeight: "bold", padding: { xs: "10px 8px", md: "16px 12px" }, textAlign: "center" }}>Watchlist</TableCell>
             </TableRow>
           </TableHead>
           <TableBody>
@@ -441,7 +455,7 @@ export const EtfPage = () => {
         }}>
           
           <Typography variant="body2" color="text.secondary" sx={{ fontWeight: 500 }}>
-            Visualizzati {fromItem} - {toItem} di {totalItems} titoli.
+            Showing {fromItem} to {toItem} of {totalItems} items
           </Typography>
 
           {totalPages > 1 && (
