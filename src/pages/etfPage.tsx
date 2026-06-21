@@ -15,7 +15,13 @@ import {
   TableRow,
   TableSortLabel,
   Typography,
+  IconButton,
+  Tooltip
 } from "@mui/material";
+// Importazione icone Material UI aggiornate
+import SearchIcon from "@mui/icons-material/Search";
+import AddCircleOutlineIcon from "@mui/icons-material/AddCircleOutline";
+import RemoveCircleOutlineIcon from "@mui/icons-material/RemoveCircleOutline";
 import { EtfSearchDialog } from "../components/etfSearchDialog";
 import { useSearchParams } from 'react-router-dom';
 
@@ -167,7 +173,6 @@ export const EtfPage = () => {
     navigate(`/etf/${etfData.id}`);
   };
 
-  {/* RIPRISTINATA LOGICA ORIGINALE DI RIMOZIONE WATCHLIST */}
   const removeFromWatchlist = async (etfData: any, isRetry = false) => {
     if (isCheckingAuth) return;
 
@@ -202,7 +207,6 @@ export const EtfPage = () => {
     }
   };
 
-  {/* RIPRISTINATA LOGICA ORIGINALE DI AGGIUNTA WATCHLIST */}
   const addToWatchlist = async (etfData: any, isRetry = false) => {
     if (isCheckingAuth) return;
 
@@ -277,19 +281,51 @@ export const EtfPage = () => {
 
   const paginationRange = fetchPageNumbers();
 
+  const getResponsiveCellStyles = (columnId: string) => {
+    const basePadding = { xs: "10px 8px", md: "16px 12px" };
+    
+    switch (columnId) {
+      case "ter":
+      case "symbol":
+        return { padding: basePadding, display: { xs: 'none', sm: 'table-cell' } };
+      case "distribution":
+        return { padding: basePadding, display: { xs: 'none', md: 'table-cell' } };
+      case "isin":
+        return { padding: basePadding, display: { xs: 'none', lg: 'table-cell' } };
+      default:
+        return { padding: basePadding };
+    }
+  };
+
   return (
-    <Paper sx={{ width: { xs: "95%", md: "85%", lg: "80%" }, overflow: "hidden", margin: "2rem auto", paddingBottom: "1rem" }}>
-      <Typography variant="h4" component="div" sx={{ flexGrow: 1, padding: "1.5rem 1rem 1rem 1rem", fontWeight: "bold" }}>
-        ETF SEARCH TABLE
+    <Paper 
+      sx={{ 
+        width: { xs: "98%", md: "92%", lg: "85%" }, 
+        overflow: "hidden", 
+        margin: "2rem auto", // Modificato il margine verticale (da 0.5rem a 2rem) per distanziare la tabella dal top/bottom pagina
+        paddingBottom: "1rem" 
+      }}
+    >
+      <Typography 
+        variant="h4" 
+        component="div" 
+        sx={{ 
+          flexGrow: 1, 
+          padding: "1.5rem 1rem 1rem 1rem", 
+          fontWeight: "bold",
+          fontSize: { xs: '1.5rem', sm: '2rem', md: '2.125rem' }
+        }}
+      >
+        ETF SEARCH
       </Typography>
       
-      {/* Box Superiore responsive */}
       <Box sx={{ margin: "0 1rem 1.5rem 1rem", display: "flex", justifyContent: "flex-end" }}>
         <Button
           variant="contained"
           color="primary"
+          startIcon={<SearchIcon />} 
           onClick={() => setSearchDialogOpen(true)}
-          sx={{ width: { xs: "100%", sm: "auto" } }}
+          sx={{ width: { xs: "100%", sm: "auto" }, fontWeight: "bold" }}
         >
           SEARCH ETF
         </Button>
@@ -301,18 +337,29 @@ export const EtfPage = () => {
         />
       </Box>
 
-      {/* Container della Tabella con scroll orizzontale nativo */}
       <TableContainer sx={{ overflowX: "auto" }}>
-        <Table stickyHeader aria-label="sticky table" sx={{ minWidth: 800 }}>
+        <Table stickyHeader aria-label="sticky table" sx={{ minWidth: { xs: '100%', sm: 800 } }}>
           <TableHead>
             <TableRow>
               {COLUMNS.map((column) => (
-                <TableCell key={column.id} sx={{ fontWeight: "bold" }}>
+                <TableCell 
+                  key={column.id} 
+                  sx={{ 
+                    fontWeight: "bold", 
+                    ...getResponsiveCellStyles(column.id) 
+                  }}
+                >
                   {column.sortKey ? (
                     <TableSortLabel
                       active={searchData.sortField === column.sortKey}
                       direction={searchData.sortField === column.sortKey && searchData.sortDirection === "ASC" ? "asc" : "desc"}
                       onClick={() => handleSortRequest(column.sortKey!)}
+                      sx={{
+                        '& .MuiTableSortLabel-icon': {
+                          color: searchData.sortField === column.sortKey ? 'primary.main' : 'inherit',
+                          opacity: searchData.sortField === column.sortKey ? 1 : 0.4,
+                        },
+                      }}
                     >
                       {column.label}
                     </TableSortLabel>
@@ -321,7 +368,7 @@ export const EtfPage = () => {
                   )}
                 </TableCell>
               ))}
-              <TableCell sx={{ fontWeight: "bold" }}>Add to Watchlist</TableCell>
+              <TableCell sx={{ fontWeight: "bold", padding: { xs: "10px 8px", md: "16px 12px" } }}>Watchlist</TableCell>
             </TableRow>
           </TableHead>
           <TableBody>
@@ -329,27 +376,52 @@ export const EtfPage = () => {
               <TableRow key={index} tabIndex={-1} hover>
                 <TableCell
                   role="checkbox"
-                  sx={{ cursor: "pointer", color: 'primary.main', fontWeight: 'bold' }}
+                  sx={{ 
+                    cursor: "pointer", 
+                    color: 'primary.main', 
+                    fontWeight: 'bold',
+                    padding: { xs: "12px 8px", md: "16px 12px" },
+                    maxWidth: { xs: '140px', sm: 'none' },
+                    overflow: 'hidden',
+                    textOverflow: 'ellipsis',
+                    whiteSpace: { xs: 'nowrap', sm: 'normal' }
+                  }}
                   onClick={() => showEtf(row)}
                 >
                   {row.longName != null ? row.longName : row.shortName}
                 </TableCell>
-                <TableCell>{row.fundSize}</TableCell>
-                <TableCell>{row.ter}</TableCell>
-                <TableCell>{row.y1Yield}</TableCell>
-                <TableCell>{row.regularMarketPrice}</TableCell>
-                <TableCell>{row.type}</TableCell>
-                <TableCell>{row.isin}</TableCell>
-                <TableCell>{row.symbol}</TableCell>
-                <TableCell>
+                <TableCell sx={getResponsiveCellStyles("fundSize")}>{row.fundSize}</TableCell>
+                <TableCell sx={getResponsiveCellStyles("ter")}>{row.ter}</TableCell>
+                <TableCell sx={getResponsiveCellStyles("y1Yield")}>{row.y1Yield}</TableCell>
+                <TableCell sx={getResponsiveCellStyles("price")}>{row.regularMarketPrice}</TableCell>
+                <TableCell sx={getResponsiveCellStyles("distribution")}>{row.type}</TableCell>
+                <TableCell sx={getResponsiveCellStyles("isin")}>{row.isin}</TableCell>
+                <TableCell sx={getResponsiveCellStyles("symbol")}>{row.symbol}</TableCell>
+                <TableCell sx={{ padding: { xs: "8px", md: "12px" }, textAlign: "center" }}>
                   {row.watchlistId === null ? (
-                    <Button variant="outlined" color="primary" size="small" onClick={() => addToWatchlist(row)}>
-                      ADD
-                    </Button>
+                    <Tooltip title="Aggiungi alla Watchlist" arrow>
+                      <IconButton 
+                        onClick={() => addToWatchlist(row)}
+                        sx={{ 
+                          color: "success.main",
+                          '&:hover': { backgroundColor: "success.lighter" } 
+                        }}
+                      >
+                        <AddCircleOutlineIcon />
+                      </IconButton>
+                    </Tooltip>
                   ) : (
-                    <Button variant="contained" color="secondary" size="small" onClick={() => removeFromWatchlist(row)}>
-                      REMOVE
-                    </Button>
+                    <Tooltip title="Rimuovi dalla Watchlist" arrow>
+                      <IconButton 
+                        onClick={() => removeFromWatchlist(row)}
+                        sx={{ 
+                          color: "error.main",
+                          '&:hover': { backgroundColor: "error.lighter" } 
+                        }}
+                      >
+                        <RemoveCircleOutlineIcon />
+                      </IconButton>
+                    </Tooltip>
                   )}
                 </TableCell>
               </TableRow>
@@ -358,7 +430,6 @@ export const EtfPage = () => {
         </Table>
       </TableContainer>
 
-      {/* --- BLOCCO DI PAGINAZIONE IN BASSO RESPONSIVE --- */}
       {totalPages > 0 && (
         <Box sx={{ 
           display: 'flex', 
@@ -369,12 +440,10 @@ export const EtfPage = () => {
           padding: '1.5rem 1rem 0.5rem 1rem' 
         }}>
           
-          {/* CONTEGGIO ELEMENTI IN BASSO A SINISTRA */}
           <Typography variant="body2" color="text.secondary" sx={{ fontWeight: 500 }}>
             Visualizzati {fromItem} - {toItem} di {totalItems} titoli.
           </Typography>
 
-          {/* PULSANTI NUMERICI IN BASSO A DESTRA */}
           {totalPages > 1 && (
             <Box sx={{ display: 'flex', gap: '0.25rem', alignItems: 'center', flexWrap: 'wrap', justifyContent: 'center' }}>
               <Button
