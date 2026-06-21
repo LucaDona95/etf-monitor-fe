@@ -34,7 +34,10 @@ export const EtfDetail = () => {
   // --- CARICAMENTO DETTAGLIO ETF ---
   const loadData = async (etfId: string) => {
     setLoading(true);
-    const loadUrl = `http://localhost:8081/api/v1/etfs/${etfId}`;
+
+
+    
+    const loadUrl = import.meta.env.VITE_API_URL+`/api/v1/etfs/${etfId}`;
     
     // Usiamo il token del contesto globale
     const config = userData?.jwtToken

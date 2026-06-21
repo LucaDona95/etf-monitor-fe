@@ -111,7 +111,7 @@ useEffect(() => {
 
   const loadData = async (searchData: any, isRetry = false) => {
 
-  const loadUrl = "http://localhost:8081/api/v1/etfs";
+  const loadUrl = import.meta.env.VITE_API_URL+"/api/v1/etfs";
 
  
   const paramsForBackend = {

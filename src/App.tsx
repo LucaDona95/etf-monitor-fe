@@ -10,6 +10,9 @@ import {Activation} from './pages/account-activation'
 import {Watchlist} from './pages/watchlist';
 import {UserProfile} from './pages/profile';
 import {ChangePassword} from './pages/new-password';
+import { MuiFooter } from "./components/MuiFooter";
+
+import { Box } from '@mui/material';
 
 
 export const AppContext=createContext<any>({});
@@ -21,30 +24,40 @@ function App() {
 
   const [isCheckingAuth, setIsCheckingAuth] = useState(true);
 
-  return (
-    <div>
-     
-      <AppContext.Provider value={{userData,setUserData,isCheckingAuth, setIsCheckingAuth}}>
-      
+
+return (
+    <AppContext.Provider value={{ userData, setUserData, isCheckingAuth, setIsCheckingAuth }}>
       <Router>
-        <MuiNavbar />
-        <Routes> 
-          <Route path="/etf" element={<EtfPage />}></Route>
-          <Route path="/etf/:id" element={<EtfDetail />} />
-          <Route path="/registration" element={<Registration />}></Route>
-          <Route path="/login" element={<Login/>}></Route>
-          <Route path="/watchlist" element={<Watchlist/>}></Route>
-          <Route path="/alert/:id" element={<EditAlert/>}></Route>
-          <Route path="/activation" element={<Activation/>}></Route>
-          <Route path="/profile" element={<UserProfile/>}></Route>
-          <Route path="/change-password" element={<ChangePassword/>}></Route>
+        
+        <Box 
+          sx={{ 
+            display: 'flex', 
+            flexDirection: 'column', 
+            minHeight: '100vh' 
+          }}
+        >
+          <MuiNavbar />
           
-        </Routes>
+          <Box component="main" sx={{ flexGrow: 1 }}>
+            <Routes> 
+              <Route path="/etf" element={<EtfPage />} />
+              <Route path="/etf/:id" element={<EtfDetail />} />
+              <Route path="/registration" element={<Registration />} />
+              <Route path="/login" element={<Login />} />
+              <Route path="/watchlist" element={<Watchlist />} />
+              <Route path="/alert/:id" element={<EditAlert />} />
+              <Route path="/activation" element={<Activation />} />
+              <Route path="/profile" element={<UserProfile />} />
+              <Route path="/change-password" element={<ChangePassword />} />
+            </Routes>
+          </Box>
+
+          <MuiFooter /> 
+        </Box>
       </Router>
-      </AppContext.Provider>
-      
-    </div>
+    </AppContext.Provider>
   );
 }
+
 
 export default App;

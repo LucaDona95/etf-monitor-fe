@@ -8,36 +8,35 @@ import {
   Box, 
   Menu, 
   IconButton,
-  CircularProgress // Aggiunto per un caricamento fluido all'avvio
+  CircularProgress,
+  useMediaQuery,
+  useTheme
 } from "@mui/material";
-import { AccountCircle } from '@mui/icons-material';
+import { AccountCircle, Menu as MenuIcon } from '@mui/icons-material';
 import { useNavigate } from "react-router-dom";
 import { AppContext } from "../App";
 import { useContext, useState, useEffect } from "react";
 import axios from 'axios';
 
 export const MuiNavbar = () => {
-  // CANCELLA o commenta questa riga:
-  // const [isCheckingAuth, setIsCheckingAuth] = useState(true);
-
-  // MODIFICA QUI: Estrai tutto dal contesto globale
   const { userData, setUserData, isCheckingAuth, setIsCheckingAuth } = useContext(AppContext);
   const navigate = useNavigate();
+  const theme = useTheme();
+  
+  const isMobile = useMediaQuery(theme.breakpoints.down('md'));
 
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
+  const [navAnchorEl, setNavAnchorEl] = useState<null | HTMLElement>(null);
 
   // --- AUTOMAZIONE SU REFRESH PAGINA (F5) ---
   useEffect(() => {
     const restoreSession = async () => {
       const savedRefreshToken = localStorage.getItem("refreshToken");
 
-      console.log("saved refresh token:", savedRefreshToken);
-
       if (!userData && savedRefreshToken) {
         try {
-          console.log("F5 rilevato. Tento il ripristino della sessione...");
           const response = await axios.post("http://localhost:8081/api/v1/auth/refresh-token", {
-            token: savedRefreshToken // Usi 'token' in base al tuo backend, perfetto
+            token: savedRefreshToken 
           });
 
           const newAccessToken = response.data.token;
@@ -48,14 +47,11 @@ export const MuiNavbar = () => {
           }
 
           setUserData({ jwtToken: newAccessToken });
-          console.log("Sessione ripristinata con successo all'avvio.");
         } catch (error) {
           console.error("Refresh token scaduto o rimosso dal DB. Pulisco la sessione.");
           localStorage.clear();
         }
       }
-      
-      // AGGIORNA LO STATO GLOBALE ORA!
       setIsCheckingAuth(false); 
     };
 
@@ -63,7 +59,7 @@ export const MuiNavbar = () => {
   }, []);
 
   const toHomepage = () => {
-    navigate("/");
+    navigate("/etf");
   };
 
   const handleMenu = (event: React.MouseEvent<HTMLElement>) => {
@@ -74,6 +70,14 @@ export const MuiNavbar = () => {
     setAnchorEl(null);
   };
 
+  const handleNavMenu = (event: React.MouseEvent<HTMLElement>) => {
+    setNavAnchorEl(event.currentTarget);
+  };
+
+  const handleNavMenuClose = () => {
+    setNavAnchorEl(null);
+  };
+
   const showProfile = () => {
     handleClose();
     navigate("/profile");
@@ -81,44 +85,27 @@ export const MuiNavbar = () => {
 
   const handleLogout = async (isRetry = false) => {
     setAnchorEl(null);
-
-    const config = {
-      headers: {
-        "Authorization": "Bearer " + userData?.jwtToken
-      }
-    };
+    const config = { headers: { "Authorization": "Bearer " + userData?.jwtToken } };
 
     try {
       await axios.post("http://localhost:8081/api/v1/users/logout", null, config);
-      console.log("Logout completed on backend");
     } catch (error: any) {
-      console.error("Backend logout failed:", error);
-
       if (error.response?.status === 401 && !isRetry) {
-        console.log("Token scaduto. Tento il refresh...");
-        
         try {
           const currentRefreshToken = localStorage.getItem("refreshToken");
-          
           const refreshResponse = await axios.post("http://localhost:8081/api/v1/auth/refresh-token", {
             refreshToken: currentRefreshToken
           });
 
           const newAccessToken = refreshResponse.data.token;
-          const newRefreshToken = refreshResponse.data.refreshToken;
-
-          if (newRefreshToken) {
-            localStorage.setItem("refreshToken", newRefreshToken);
+          if (refreshResponse.data.refreshToken) {
+            localStorage.setItem("refreshToken", refreshResponse.data.refreshToken);
           }
-          
           setUserData({ ...userData, jwtToken: newAccessToken });
-
-          console.log("Refresh riuscito. Rilancio handleLogout con il nuovo token...");
           await handleLogout(true); 
-          return; // Usciamo per evitare di eseguire il finally del primo tentativo
-
+          return;
         } catch (refreshError) {
-          console.error("Anche il refresh token è scaduto o invalido. Forzo l'uscita.");
+          console.error("Anche il refresh token è scaduto.");
         }
       }
     } finally {
@@ -132,66 +119,111 @@ export const MuiNavbar = () => {
 
   return (
     <Box sx={{ flexGrow: 1 }}>
-      <AppBar position="static">
-        <Toolbar>
-          <Typography
-            variant="h6"
-            component="div"
-            sx={{ flexGrow: 1, cursor: "pointer" }}
-            onClick={toHomepage}
-          >
-            ETF MONITOR APP
-          </Typography>
+      <AppBar position="sticky" color="default" elevation={2} sx={{ bgcolor: 'background.paper' }}>
+        <Toolbar sx={{ justifyContent: "space-between" }}>
+          
+          {/* --- PARTE SINISTRA: SCRITTA "ETF MONITOR" + HAMBURGER SOLO SE LOGGATO SU MOBILE --- */}
+          <Stack direction="row" alignItems="center" spacing={1}>
+            {isMobile && userData != null && (
+              <>
+                <IconButton
+                  size="large"
+                  edge="start"
+                  color="inherit"
+                  aria-label="menu"
+                  onClick={handleNavMenu}
+                >
+                  <MenuIcon />
+                </IconButton>
+                <Menu
+                  id="menu-appbar-links"
+                  anchorEl={navAnchorEl}
+                  open={Boolean(navAnchorEl)}
+                  onClose={handleNavMenuClose}
+                  sx={{ display: { xs: 'block', md: 'none' } }}
+                >
+                  <MenuItem onClick={() => { handleNavMenuClose(); navigate("/watchlist"); }}>
+                    Watchlist
+                  </MenuItem>
+                </Menu>
+              </>
+            )}
+
+            <Typography
+              variant="h6"
+              component="div"
+              sx={{ 
+                fontWeight: 700, 
+                letterSpacing: '.1rem', 
+                color: 'primary.main', 
+                cursor: "pointer",
+                userSelect: 'none',
+                '&:hover': { opacity: 0.8 }
+              }}
+              onClick={toHomepage}
+            >
+              ETF MONITOR
+            </Typography>
+          </Stack>
+
+          {/* --- PARTE DESTRA: SPOSTATA LA WATCHLIST ADIACENTE AL PROFILO (SOLO DESKTOP) + UTENTE --- */}
           <Stack direction="row" spacing={2} alignItems="center">
-            <Button onClick={() => navigate("/")} color="inherit">
-              Etf Table
-            </Button>
             
-            {/* Se stiamo verificando il token all'avvio mostriamo un piccolo loader */}
+            {/* Se l'utente è loggato e siamo su Desktop, mostra il tasto Watchlist subito a sinistra del profilo */}
+            {!isMobile && userData != null && (
+              <Button 
+                onClick={() => navigate("/watchlist")} 
+                color="inherit" 
+                sx={{ fontWeight: 600 }}
+              >
+                Watchlist
+              </Button>
+            )}
+
             {isCheckingAuth ? (
-              <CircularProgress size={20} color="inherit" />
+              <CircularProgress size={24} color="primary" />
             ) : userData == null ? (
-              <Button color='inherit' onClick={() => navigate("/login")}>
+              <Button 
+                variant="contained" 
+                color='primary' 
+                onClick={() => navigate("/login")}
+                sx={{ borderRadius: 2, px: 3, fontWeight: 'bold' }}
+              >
                 Login
               </Button>
             ) : (
-              <IconButton
-                size="large"
-                edge="end"
-                aria-label="account of current user"
-                aria-controls="menu-profile"
-                aria-haspopup="true"
-                onClick={handleMenu}
-                color="inherit"
-              >
-                <AccountCircle />
-              </IconButton>
-            )}
-            
-            {userData != null && (
-              <Menu 
-                id="menu-profile"
-                anchorEl={anchorEl}
-                anchorOrigin={{
-                  vertical: 'bottom',
-                  horizontal: 'right',
-                }}
-                keepMounted
-                transformOrigin={{
-                  vertical: 'top',
-                  horizontal: 'right',
-                }}
-                open={Boolean(anchorEl)}
-                onClose={handleClose}
-              >
-                <MenuItem onClick={() => handleLogout()}>Logout</MenuItem>
-                <MenuItem onClick={showProfile}>Account</MenuItem>
-                <MenuItem onClick={() => { handleClose(); navigate("/watchlist"); }}>
-                  Watchlist
-                </MenuItem>
-              </Menu>
+              <>
+                <IconButton
+                  size="large"
+                  aria-label="account profile"
+                  aria-controls="menu-profile"
+                  aria-haspopup="true"
+                  onClick={handleMenu}
+                  color="primary"
+                  sx={{ p: 0.5 }}
+                >
+                  <AccountCircle fontSize="large" />
+                </IconButton>
+                <Menu 
+                  id="menu-profile"
+                  anchorEl={anchorEl}
+                  anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
+                  keepMounted
+                  transformOrigin={{ vertical: 'top', horizontal: 'right' }}
+                  open={Boolean(anchorEl)}
+                  onClose={handleClose}
+                  slotProps={{ paper: { sx: { mt: 1, minWidth: 150 } } }}
+                >
+                  <MenuItem onClick={showProfile}>Account</MenuItem>
+                  {/* Rimossa la voce Watchlist da qui come richiesto */}
+                  <MenuItem onClick={() => handleLogout()} sx={{ color: 'error.main', fontWeight: 'bold' }}>
+                    Logout
+                  </MenuItem>
+                </Menu>
+              </>
             )}
           </Stack>
+
         </Toolbar>
       </AppBar>
     </Box>
