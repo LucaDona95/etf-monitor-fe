@@ -56,7 +56,6 @@ export const Activation = () => {
     }
   };
 
- 
   const handleResendCode = () => {
     if (!email) {
       setEmailError("Email is required to request a new code");
@@ -73,12 +72,7 @@ export const Activation = () => {
     axios.post("http://localhost:8081/api/v1/auth/resend-activation", { email: email })
       .then((response: any) => {
         setLoading(false);
-        
-       
         setResendSuccess("If the email address exists in our system, you will receive a new activation code shortly.");
-        
-      
-        
         if (emailFromContext && isFromLogin) {
           setUserData({ email: email, isFromLogin: false });
         }
@@ -143,141 +137,190 @@ export const Activation = () => {
   };
 
   return (
-    <Container component="main" maxWidth="xs">
-      <Box sx={{ marginTop: 8, display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-        
-        {!activationCompleted ? (
-          <>
-            {globalError && (
-              <Stack sx={{ width: '100%', mb: 2 }} spacing={2}>
-                <Alert severity='error' onClose={() => setGlobalError("")}>
-                  {globalError}
-                </Alert>
-              </Stack>
-            )}
+    <Box 
+      sx={{ 
+        minHeight: '100vh', 
+        display: 'flex', 
+        alignItems: 'center', 
+        justifyContent: 'center',
+        background: (theme) => `radial-gradient(circle at 50% 50%, ${theme.palette.background.paper} 0%, ${theme.palette.background.default} 100%)`,
+        p: 2 
+      }}
+    >
+      {/* Portato a "sm" per allargare la sezione da PC */}
+      <Container component="main" maxWidth="sm" disableGutters>
+        <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', width: '100%' }}>
+          
+          {!activationCompleted ? (
+            <>
+              {globalError && (
+                <Stack sx={{ width: '100%', mb: 3 }} spacing={2}>
+                  <Alert severity='error' onClose={() => setGlobalError("")}>
+                    {globalError}
+                  </Alert>
+                </Stack>
+              )}
 
-            {resendSuccess && (
-              <Stack sx={{ width: '100%', mb: 2 }} spacing={2}>
-                <Alert severity='success' onClose={() => setResendSuccess("")}>
-                  {resendSuccess}
-                </Alert>
-              </Stack>
-            )}
+              {resendSuccess && (
+                <Stack sx={{ width: '100%', mb: 3 }} spacing={2}>
+                  <Alert severity='success' onClose={() => setResendSuccess("")}>
+                    {resendSuccess}
+                  </Alert>
+                </Stack>
+              )}
 
-            <Paper elevation={4} sx={{ p: 4, width: '100%', borderRadius: 2 }}>
-              <Typography component="h1" variant="h5" sx={{ textAlign: 'center', fontWeight: 'bold', mb: 3 }}>
-                Activate Account
-              </Typography>
-              
-              <Box component="form" noValidate sx={{ mt: 1 }}>
+              <Paper 
+                elevation={4} 
+                sx={{ 
+                  px: { xs: 3, sm: 6 }, 
+                  py: { xs: 4, sm: 6 }, 
+                  width: '100%', 
+                  borderRadius: 5,
+                  boxSizing: 'border-box',
+                  bgcolor: 'background.paper',
+                  border: '1px solid',
+                  borderColor: 'divider'
+                }}
+              >
+                <Typography component="h1" variant="h4" sx={{ textAlign: 'center', fontWeight: 'bold', mb: 4 }}>
+                  Activate Account
+                </Typography>
                 
-                {emailFromContext ? (
-                  isFromLogin ? (
-                    <Box sx={{ mb: 2, p: 2, bgcolor: 'action.selected', borderRadius: 1, textAlign: 'center' }}>
-                      <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
-                        Account activation required for:
-                      </Typography>
-                      <Typography variant="subtitle1" sx={{ fontWeight: 'bold', color: 'text.primary', mb: 2 }}>
-                        {email}
-                      </Typography>
-                      <Button 
-                        variant="outlined" 
-                        size="small" 
-                        fullWidth 
-                        disabled={loading}
-                        onClick={handleResendCode}
-                      >
-                        Request Activation Code
-                      </Button>
-                    </Box>
+                <Box component="form" noValidate>
+                  
+                  {emailFromContext ? (
+                    isFromLogin ? (
+                      <Box sx={{ mb: 3, p: 2.5, bgcolor: 'action.selected', borderRadius: 3, textAlign: 'center', border: '1px solid', borderColor: 'divider' }}>
+                        <Typography variant="body1" color="text.secondary" sx={{ mb: 1 }}>
+                          Account activation required for:
+                        </Typography>
+                        <Typography variant="h6" sx={{ fontWeight: 'bold', color: 'text.primary', mb: 2.5 }}>
+                          {email}
+                        </Typography>
+                        <Button 
+                          variant="outlined" 
+                          size="medium" 
+                          fullWidth 
+                          disabled={loading}
+                          onClick={handleResendCode}
+                          sx={{ borderRadius: 2, fontWeight: 'bold', p: 1 }}
+                        >
+                          Request Activation Code
+                        </Button>
+                      </Box>
+                    ) : (
+                      <Box sx={{ mb: 3, p: 2.5, bgcolor: 'action.selected', borderRadius: 3, textAlign: 'center', border: '1px solid', borderColor: 'divider' }}>
+                        <Typography variant="body1" color="text.secondary" sx={{ mb: 0.5 }}>
+                          We sent a 6-character code to:
+                        </Typography>
+                        <Typography variant="h6" sx={{ fontWeight: 'bold', color: 'primary.main' }}>
+                          {email}
+                        </Typography>
+                      </Box>
+                    )
                   ) : (
-                    <Box sx={{ mb: 2, p: 2, bgcolor: 'action.selected', borderRadius: 1, textAlign: 'center' }}>
-                      <Typography variant="body2" color="text.secondary">
-                        We sent a 6-character code to:
-                      </Typography>
-                      <Typography variant="subtitle1" sx={{ fontWeight: 'bold', color: 'primary.main' }}>
-                        {email}
-                      </Typography>
-                    </Box>
-                  )
-                ) : (
+                    <TextField
+                      margin="normal"
+                      required
+                      fullWidth
+                      label="Email Address"
+                      value={email}
+                      onChange={(e) => setEmail(e.target.value)}
+                      onBlur={handleEmailBlur}
+                      onFocus={() => setEmailError("")}
+                      error={!!emailError}
+                      helperText={emailError}
+                      disabled={loading}
+                      slotProps={{ input: { sx: { borderRadius: 2 } } }}
+                      sx={{ mb: 2 }}
+                    />
+                  )}
+                  
                   <TextField
                     margin="normal"
                     required
                     fullWidth
-                    label="Email Address"
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    onBlur={handleEmailBlur}
-                    onFocus={() => setEmailError("")}
-                    error={!!emailError}
-                    helperText={emailError}
-                    disabled={loading}
+                    label="Activation Code"
+                    placeholder="6-character code"
+                    autoFocus={!!emailFromContext && !isFromLogin} 
+                    inputProps={{ maxLength: 6 }}
+                    value={activationCode}
+                    onChange={(e) => setActivationCode(e.target.value)}
+                    onBlur={handleCodeBlur}
+                    onFocus={() => setCodeError("")}
+                    error={!!codeError}
+                    helperText={codeError}
+                    disabled={loading || (isFromLogin && !resendSuccess)}
+                    slotProps={{ input: { sx: { borderRadius: 2 } } }}
+                    sx={{ mb: 2 }}
                   />
-                )}
-                
-                <TextField
-                  margin="normal"
-                  required
-                  fullWidth
-                  label="Activation Code"
-                  placeholder="6-character code"
-                  autoFocus={!!emailFromContext && !isFromLogin} 
-                  inputProps={{ maxLength: 6 }}
-                  value={activationCode}
-                  onChange={(e) => setActivationCode(e.target.value)}
-                  onBlur={handleCodeBlur}
-                  onFocus={() => setCodeError("")}
-                  error={!!codeError}
-                  helperText={codeError}
-                  disabled={loading || (isFromLogin && !resendSuccess)}
-                />
 
-                <Button
-                  fullWidth
-                  variant="contained"
-                  color="primary"
-                  disabled={loading || (isFromLogin && !resendSuccess)}
-                  sx={{ mt: 3, mb: 2, p: 1.2, fontWeight: 'bold' }}
-                  onClick={handleActivate}
-                >
-                  {loading ? <CircularProgress size={24} color="inherit" /> : "Verify Account"}
-                </Button>
+                  <Button
+                    fullWidth
+                    variant="contained"
+                    color="primary"
+                    disabled={loading || (isFromLogin && !resendSuccess)}
+                    sx={{ mt: 4, mb: 2, p: 1.6, fontSize: '1.05rem', fontWeight: 'bold', borderRadius: 2.5 }}
+                    onClick={handleActivate}
+                  >
+                    {loading ? <CircularProgress size={24} color="inherit" /> : "Verify Account"}
+                  </Button>
 
-                {!emailFromContext && (
-                  <Box sx={{ textAlign: 'center', mt: 2 }}>
-                    <Link
-                      component="button"
-                      type="button"
-                      variant="body2"
-                      disabled={loading}
-                      onClick={handleResendCode}
-                      sx={{ textDecoration: 'none', fontWeight: 'bold' }}
-                    >
-                      Didn't receive the code? Resend email
-                    </Link>
-                  </Box>
-                )}
+                  {!emailFromContext && (
+                    <Box sx={{ textAlign: 'center', mt: 3 }}>
+                      <Link
+                        component="button"
+                        type="button"
+                        variant="body1"
+                        disabled={loading}
+                        onClick={handleResendCode}
+                        sx={{ textDecoration: 'none', fontWeight: 'bold' }}
+                      >
+                        Didn't receive the code? Resend email
+                      </Link>
+                    </Box>
+                  )}
+                </Box>
+              </Paper>
+            </>
+          ) : (
+            /* Schermata di successo - Anch'essa allargata e responsive */
+            <Paper 
+              elevation={4} 
+              sx={{ 
+                px: { xs: 3, sm: 6 }, 
+                py: { xs: 4, sm: 6 }, 
+                width: '100%', 
+                borderRadius: 5, 
+                boxSizing: 'border-box',
+                bgcolor: 'background.paper',
+                textAlign: 'center',
+                border: '1px solid',
+                borderColor: 'divider'
+              }}
+            >
+              <Box sx={{ display: 'flex', justifyContent: 'center', mb: 3 }}>
+                <CheckCircleOutlineIcon color="success" sx={{ fontSize: 70 }} />
               </Box>
+              <Typography variant="h4" sx={{ fontWeight: 'bold', mb: 2 }}>
+                Account Activated!
+              </Typography>
+              <Typography variant="body1" color="text.secondary" sx={{ mb: 4, fontSize: '1.05rem', lineHeight: 1.6 }}>
+                Il tuo account è stato attivato con successo. Adesso puoi effettuare l'accesso con le tue credenziali.
+              </Typography>
+              <Button 
+                variant="contained" 
+                color="primary" 
+                fullWidth 
+                onClick={() => navigate("/login")}
+                sx={{ p: 1.5, fontSize: '1.05rem', fontWeight: 'bold', borderRadius: 2.5 }}
+              >
+                Go to Login
+              </Button>
             </Paper>
-          </>
-        ) : (
-          <Paper elevation={4} sx={{ p: 4, width: '100%', borderRadius: 2, textAlign: 'center' }}>
-            <Box sx={{ display: 'flex', justifyContent: 'center', mb: 2 }}>
-              <CheckCircleOutlineIcon color="success" sx={{ fontSize: 60 }} />
-            </Box>
-            <Typography variant="h5" sx={{ fontWeight: 'bold', mb: 1 }}>
-              Account Activated!
-            </Typography>
-            <Typography variant="body1" color="text.secondary" sx={{ mb: 3 }}>
-              Il tuo account è stato attivato con successo. Adesso puoi effettuare l'accesso con le tue credenziali.
-            </Typography>
-            <Button variant="contained" fullWidth onClick={() => navigate("/login")}>
-              Go to Login
-            </Button>
-          </Paper>
-        )}
-      </Box>
-    </Container>
+          )}
+        </Box>
+      </Container>
+    </Box>
   );
 };
