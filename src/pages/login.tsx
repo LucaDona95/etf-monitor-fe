@@ -1,5 +1,5 @@
-import { useNavigate, useLocation } from "react-router-dom"; // <-- AGGIUNTO useLocation
-import { useContext, useState, useEffect } from "react";     // <-- AGGIUNTO useEffect
+import { useNavigate, useLocation } from "react-router-dom"; 
+import { useContext, useState, useEffect } from "react";     
 import { AppContext } from "../App";
 import { 
   Typography, 
@@ -18,7 +18,7 @@ import axios from 'axios';
 export const Login = () => {
   const { setUserData } = useContext(AppContext);
   const navigate = useNavigate();
-  const location = useLocation(); // <-- Inizializziamo lo stato della navigazione attuale
+  const location = useLocation(); 
 
   const [loginEmail, setLoginEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -29,20 +29,14 @@ export const Login = () => {
   const [loading, setLoading] = useState(false);
   const [loginError, setLoginError] = useState("");
   
-  // NUOVO: Stato per gestire l'avviso di password modificata con successo
   const [successMsg, setSuccessMsg] = useState("");
 
   const [isAccountInactive, setIsAccountInactive] = useState(false);
 
-  // --- NUOVO: INTERCETTAZIONE DEL REFRESH E REINDERIZZAMENTO DA CAMBIO PASSWORD ---
   useEffect(() => {
     if (location.state?.passwordChangedSuccess) {
-
       console.log("password changed ok");
-
       setSuccessMsg("Password updated successfully! Please log in again with your new credentials.");
-      
-      // Puliamo lo stato della cronologia per evitare che l'alert rimanga fisso facendo F5 sulla pagina
       window.history.replaceState({}, document.title);
     }
   }, [location]);
@@ -130,49 +124,72 @@ export const Login = () => {
   };
 
   return (
-    <Container component="main" maxWidth="xs">
-      <Box sx={{ marginTop: 8, display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-        
-        {/* --- NUOVO: MOSTRA IL POPUP DI SUCCESSO DEL CAMBIO PASSWORD --- */}
-        {successMsg && (
-          <Stack sx={{ width: '100%', mb: 2 }}>
-            <Alert severity="success" onClose={() => setSuccessMsg("")}>
-              {successMsg}
-            </Alert>
-          </Stack>
-        )}
-
-        {loginError && (
-          <Stack sx={{ width: '100%', mb: 2 }} spacing={2}>
-            {isAccountInactive ? (
-              <Alert severity='warning' onClose={() => { setLoginError(""); setIsAccountInactive(false); }}>
-                {loginError}.{" "}
-                <Link 
-                  component="button" 
-                  type="button" 
-                  onClick={() => {
-                    setUserData({ email: loginEmail, isFromLogin: true });
-                    navigate("/activation");
-                  }} 
-                  sx={{ fontWeight: 'bold', color: 'warning.dark', textDecoration: 'underline', verticalAlign: 'baseline' }}
-                >
-                  Verify your account here
-                </Link>
-              </Alert>
-            ) : (
-              <Alert severity='error' onClose={() => setLoginError("")}>
-                {loginError}
-              </Alert>
-            )}
-          </Stack>
-        )}
-
-        <Paper elevation={4} sx={{ p: 4, width: '100%', borderRadius: 2 }}>
-          <Typography component="h1" variant="h5" sx={{ textAlign: 'center', fontWeight: 'bold', mb: 3 }}>
+    <Box 
+      sx={{ 
+        minHeight: '100vh', 
+        display: 'flex', 
+        alignItems: 'center', 
+        justifyContent: 'center',
+        background: (theme) => `radial-gradient(circle at 50% 50%, ${theme.palette.background.paper} 0%, ${theme.palette.background.default} 100%)`,
+        p: 2 
+      }}
+    >
+      {/* Portato maxWidth a "sm" per dare più larghezza su PC */}
+      <Container component="main" maxWidth="sm" disableGutters>
+        <Paper 
+          elevation={4} 
+          sx={{ 
+            // px gestisce i lati (più largo su desktop)
+            px: { xs: 3, sm: 6, md: 8 }, 
+            // py gestisce l'altezza (più alto e arioso su desktop)
+            py: { xs: 4, sm: 6, md: 7 }, 
+            width: '100%', 
+            borderRadius: 5, 
+            boxSizing: 'border-box',
+            bgcolor: 'background.paper',
+            border: '1px solid',
+            borderColor: 'divider'
+          }}
+        >
+          {/* Titolo più imponente e distanziato */}
+          <Typography component="h1" variant="h4" sx={{ textAlign: 'center', fontWeight: 'bold', mb: 4 }}>
             Sign In
           </Typography>
           
-          <Box component="form" noValidate sx={{ mt: 1 }}>
+          {successMsg && (
+            <Stack sx={{ width: '100%', mb: 3 }}>
+              <Alert severity="success" onClose={() => setSuccessMsg("")}>
+                {successMsg}
+              </Alert>
+            </Stack>
+          )}
+
+          {loginError && (
+            <Stack sx={{ width: '100%', mb: 3 }} spacing={2}>
+              {isAccountInactive ? (
+                <Alert severity='warning' onClose={() => { setLoginError(""); setIsAccountInactive(false); }}>
+                  {loginError}.{" "}
+                  <Link 
+                    component="button" 
+                    type="button" 
+                    onClick={() => {
+                      setUserData({ email: loginEmail, isFromLogin: true });
+                      navigate("/activation");
+                    }} 
+                    sx={{ fontWeight: 'bold', color: 'warning.dark', textDecoration: 'underline', verticalAlign: 'baseline' }}
+                  >
+                    Verify your account here
+                  </Link>
+                </Alert>
+              ) : (
+                <Alert severity='error' onClose={() => setLoginError("")}>
+                  {loginError}
+                </Alert>
+              )}
+            </Stack>
+          )}
+
+          <Box component="form" noValidate>
             <TextField
               margin="normal"
               required
@@ -185,11 +202,13 @@ export const Login = () => {
               onBlur={handleEmailBlur}
               onFocus={() => {
                 setEmailError("");
-                setSuccessMsg(""); // Puliamo il messaggio se l'utente inizia a digitare
+                setSuccessMsg(""); 
               }} 
               error={!!emailError}
               helperText={emailError}
               disabled={loading}
+              slotProps={{ input: { sx: { borderRadius: 2 } } }}
+              sx={{ mb: 3 }} // Spazio maggiore sotto l'input
             />
             
             <TextField
@@ -204,11 +223,13 @@ export const Login = () => {
               onBlur={handlePasswordBlur}
               onFocus={() => {
                 setPasswordError("");
-                setSuccessMsg(""); // Puliamo il messaggio se l'utente inizia a digitare
+                setSuccessMsg(""); 
               }}
               error={!!passwordError}
               helperText={passwordError}
               disabled={loading}
+              slotProps={{ input: { sx: { borderRadius: 2 } } }}
+              sx={{ mb: 2 }}
             />
 
             <Button
@@ -216,20 +237,20 @@ export const Login = () => {
               variant="contained"
               color="primary"
               disabled={loading}
-              sx={{ mt: 3, mb: 2, p: 1.2, fontWeight: 'bold' }}
+              sx={{ mt: 4, mb: 2, p: 1.6, fontSize: '1.05rem', fontWeight: 'bold', borderRadius: 2.5 }} // Pulsante leggermente più grande e spesso
               onClick={signIn}
             >
               {loading ? <CircularProgress size={24} color="inherit" /> : "Sign In"}
             </Button>
 
-            <Box sx={{ textAlign: 'center', mt: 2 }}>
-              <Typography variant="body2" color="text.secondary">
+            <Box sx={{ textAlign: 'center', mt: 4 }}>
+              <Typography variant="body1" color="text.secondary">
                 Don't have an account?{" "}
                 <Link 
                   component="button" 
                   type="button" 
                   onClick={() => navigate("/registration")} 
-                  sx={{ fontWeight: 'bold', textDecoration: 'none' }}
+                  sx={{ fontWeight: 'bold', textDecoration: 'none', fontSize: '1rem' }}
                 >
                   Sign Up
                 </Link>
@@ -237,7 +258,7 @@ export const Login = () => {
             </Box>
           </Box>
         </Paper>
-      </Box>
-    </Container>
+      </Container>
+    </Box>
   );
 };

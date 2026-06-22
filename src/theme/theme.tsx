@@ -1,4 +1,4 @@
-import { createTheme } from '@mui/material/styles';
+import { createTheme, alpha } from '@mui/material/styles'; // <-- AGGIUNTO alpha per gestire le trasparenze
 
 export const darkTheme = createTheme({
   palette: {
@@ -13,9 +13,10 @@ export const darkTheme = createTheme({
     },
     error: {
       main: '#ff334b',       // Red for negative yields or removals
+      light: '#ff667a',      // AGGIUNTO: Rosso più chiaro per testi su sfondi scuri
     },
     background: {
-      default: '#141820',    // UPDATED: Lighter grey/blue midnight background to reduce contrast with paper elements
+      default: '#141820',    // Lighter grey/blue midnight background to reduce contrast with paper elements
       paper: '#1d222c',      // Surface background (Navbar, Tables, Cards) providing soft depth
     },
     text: {
@@ -39,9 +40,8 @@ export const darkTheme = createTheme({
     MuiCssBaseline: {
       styleOverrides: {
         body: {
-          // Custom scrollbar setup tailored to match the updated background
           '&::-webkit-scrollbar': { width: '8px', height: '8px' },
-          '&::-webkit-scrollbar-track': { background: '#141820' }, // Updated to match background.default
+          '&::-webkit-scrollbar-track': { background: '#141820' }, 
           '&::-webkit-scrollbar-thumb': { background: '#303b4e', borderRadius: '4px' },
           '&::-webkit-scrollbar-thumb:hover': { background: '#45546f' },
         },
@@ -62,7 +62,7 @@ export const darkTheme = createTheme({
           padding: '12px 16px',
         },
         head: {
-          backgroundColor: '#161b22',        // Slightly darker header inspired by Yahoo Options layout
+          backgroundColor: '#161b22',        
           color: '#95a1bb',
           fontWeight: 700,
           textTransform: 'uppercase',
@@ -114,6 +114,31 @@ export const darkTheme = createTheme({
             boxShadow: 'none',
           },
         },
+      },
+    },
+    // --- NUOVO: SOVRASCRITTURA GLOBALE DELLO STILE DEL COMPONENTE ALERT ---
+    MuiAlert: {
+      styleOverrides: {
+        // Intercettiamo la variante standard con severity='error'
+        filledError: ({ theme }) => ({
+          backgroundColor: alpha(theme.palette.error.main, 0.15),
+          color: theme.palette.error.light,
+          border: `1px solid ${theme.palette.error.main}`,
+          fontWeight: 500,
+          '& .MuiAlert-icon': {
+            color: theme.palette.error.light,
+          },
+        }),
+        // Se usi la variante standard/outlined (default di MUI se non specifichi variant="filled")
+        standardError: ({ theme }) => ({
+          backgroundColor: alpha(theme.palette.error.main, 0.15),
+          color: theme.palette.error.light,
+          border: `1px solid ${theme.palette.error.main}`,
+          fontWeight: 500,
+          '& .MuiAlert-icon': {
+            color: theme.palette.error.light,
+          },
+        }),
       },
     },
   },
