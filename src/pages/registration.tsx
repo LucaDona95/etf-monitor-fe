@@ -9,9 +9,10 @@ import {
   Stack, 
   Alert, 
   CircularProgress,
-  Container
+  Container,
+  Grid // Ripristinato Grid standard
 } from '@mui/material';
-import axios from 'axios';
+import axios from 'axios'; // Corretto l'import da 'ajax' a 'axios'
 import { useState, useContext } from "react";
 
 import { AppContext } from "../App"; 
@@ -34,7 +35,6 @@ export const Registration = () => {
   const [reEnterPasswordError, setReEnterPasswordError] = useState("");
 
   const [loading, setLoading] = useState(false);
-  const [registrationCompleted, setRegistrationCompleted] = useState(false);
   const [registrationError, setRegistrationError] = useState("");
 
   const handleEmailBlur = () => {
@@ -72,7 +72,6 @@ export const Registration = () => {
       setReEnterPasswordError("Passwords do not match");
     }
   };
-
 
   const checkRegistration = () => {
     let hasError = false;
@@ -117,12 +116,8 @@ export const Registration = () => {
     axios.post("http://localhost:8081/api/v1/auth/register", registrationRequest)
       .then((response: any) => {
         setLoading(false);
-        
-
-        console.log("email da memorizzare: "+email);
-
+        console.log("email da memorizzare: " + email);
         setUserData({ email: email });
-        
         navigate("/activation");
       })
       .catch((error: any) => {
@@ -139,92 +134,136 @@ export const Registration = () => {
   };
 
   return (
-    <Container component="main" maxWidth="xs">
-      <Box sx={{ marginTop: 8, display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-        
-        {registrationError && (
-          <Stack sx={{ width: '100%', mb: 2 }} spacing={2}>
-            <Alert severity='error' onClose={() => setRegistrationError("")}>
-              {registrationError}
-            </Alert>
-          </Stack>
-        )}
-
-        <Paper elevation={4} sx={{ p: 4, width: '100%', borderRadius: 2 }}>
-          <Typography component="h1" variant="h5" sx={{ textAlign: 'center', fontWeight: 'bold', mb: 3 }}>
+    <Box 
+      sx={{ 
+        minHeight: '100vh', 
+        display: 'flex', 
+        alignItems: 'center', 
+        justifyContent: 'center',
+        background: (theme) => `radial-gradient(circle at 50% 50%, ${theme.palette.background.paper} 0%, ${theme.palette.background.default} 100%)`,
+        p: 2 
+      }}
+    >
+      <Container component="main" maxWidth="sm" disableGutters>
+        <Paper 
+          elevation={4} 
+          sx={{ 
+            px: { xs: 3, sm: 6 }, 
+            py: { xs: 4, sm: 6 }, 
+            width: '100%', 
+            borderRadius: 5, 
+            boxSizing: 'border-box',
+            bgcolor: 'background.paper',
+            border: '1px solid',
+            borderColor: 'divider'
+          }}
+        >
+          <Typography component="h1" variant="h4" sx={{ textAlign: 'center', fontWeight: 'bold', mb: 4 }}>
             Create account
           </Typography>
           
-          <Box component="form" noValidate sx={{ mt: 1 }}>
-            <TextField
-              margin="normal" required fullWidth label="Email Address" autoComplete="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              onBlur={handleEmailBlur}
-              onFocus={() => setEmailError("")}
-              error={!!emailError}
-              helperText={emailError}
-            />
-            
-            <TextField
-              margin="normal" required fullWidth label="First Name"
-              value={firstName}
-              onChange={(e) => setFirstName(e.target.value)}
-              onBlur={handleFirstNameBlur}
-              onFocus={() => setFirstNameError("")}
-              error={!!firstNameError}
-              helperText={firstNameError}
-            />
-            
-            <TextField
-              margin="normal" required fullWidth label="Last Name"
-              value={lastName}
-              onChange={(e) => setLastName(e.target.value)}
-              onBlur={handleLastNameBlur}
-              onFocus={() => setLastNameError("")}
-              error={!!lastNameError}
-              helperText={lastNameError}
-            />
-            
-            <TextField
-              margin="normal" required fullWidth label="Password" type="password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              onBlur={handlePasswordBlur}
-              onFocus={() => setPasswordError("")}
-              error={!!passwordError}
-              helperText={passwordError}
-            />
-            
-            <TextField
-              margin="normal" required fullWidth label="Re-enter Password" type="password"
-              value={reEnterPassword}
-              onChange={(e) => setReEnterPassword(e.target.value)}
-              onBlur={handleReEnterPasswordBlur}
-              onFocus={() => setReEnterPasswordError("")}
-              error={!!reEnterPasswordError}
-              helperText={reEnterPasswordError}
-            />
+          {registrationError && (
+            <Stack sx={{ width: '100%', mb: 3 }} spacing={2}>
+              <Alert severity='error' onClose={() => setRegistrationError("")}>
+                {registrationError}
+              </Alert>
+            </Stack>
+          )}
+          
+        <Box component="form" noValidate>
+            {/* Nelle versioni recenti di MUI si passa solo container, senza item */}
+            <Grid container spacing={2}>
+              
+              {/* Email - si usa size={12} anziché xs={12} */}
+              <Grid size={12}>
+                <TextField
+                  required fullWidth label="Email Address" autoComplete="email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  onBlur={handleEmailBlur}
+                  onFocus={() => setEmailError("")}
+                  error={!!emailError}
+                  helperText={emailError}
+                  slotProps={{ input: { sx: { borderRadius: 2 } } }}
+                />
+              </Grid>
+              
+              {/* First Name */}
+              <Grid size={12}>
+                <TextField
+                  required fullWidth label="First Name"
+                  value={firstName}
+                  onChange={(e) => setFirstName(e.target.value)}
+                  onBlur={handleFirstNameBlur}
+                  onFocus={() => setFirstNameError("")}
+                  error={!!firstNameError}
+                  helperText={firstNameError}
+                  slotProps={{ input: { sx: { borderRadius: 2 } } }}
+                />
+              </Grid>
+              
+              {/* Last Name */}
+              <Grid size={12}>
+                <TextField
+                  required fullWidth label="Last Name"
+                  value={lastName}
+                  onChange={(e) => setLastName(e.target.value)}
+                  onBlur={handleLastNameBlur}
+                  onFocus={() => setLastNameError("")}
+                  error={!!lastNameError}
+                  helperText={lastNameError}
+                  slotProps={{ input: { sx: { borderRadius: 2 } } }}
+                />
+              </Grid>
+              
+              {/* Password */}
+              <Grid size={12}>
+                <TextField
+                  required fullWidth label="Password" type="password"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  onBlur={handlePasswordBlur}
+                  onFocus={() => setPasswordError("")}
+                  error={!!passwordError}
+                  helperText={passwordError}
+                  slotProps={{ input: { sx: { borderRadius: 2 } } }}
+                />
+              </Grid>
+              
+              {/* Re-enter Password */}
+              <Grid size={12}>
+                <TextField
+                  required fullWidth label="Re-enter Password" type="password"
+                  value={reEnterPassword}
+                  onChange={(e) => setReEnterPassword(e.target.value)}
+                  onBlur={handleReEnterPasswordBlur}
+                  onFocus={() => setReEnterPasswordError("")}
+                  error={!!reEnterPasswordError}
+                  helperText={reEnterPasswordError}
+                  slotProps={{ input: { sx: { borderRadius: 2 } } }}
+                />
+              </Grid>
+            </Grid>
 
             <Button
               fullWidth variant="contained" color="primary" disabled={loading}
-              sx={{ mt: 3, mb: 2, p: 1.2, fontWeight: 'bold' }}
+              sx={{ mt: 5, mb: 2, p: 1.6, fontSize: '1.05rem', fontWeight: 'bold', borderRadius: 2.5 }}
               onClick={checkRegistration}
             >
               {loading ? <CircularProgress size={24} color="inherit" /> : "Sign Up"}
             </Button>
 
-            <Box sx={{ textAlign: 'center', mt: 1 }}>
-              <Typography variant="body2" color="text.secondary">
+            <Box sx={{ textAlign: 'center', mt: 4 }}>
+              <Typography variant="body1" color="text.secondary">
                 Already have an account?{" "}
-                <Link component="button" type="button" onClick={() => navigate("/login")} sx={{ fontWeight: 'bold', textDecoration: 'none' }}>
+                <Link component="button" type="button" onClick={() => navigate("/login")} sx={{ fontWeight: 'bold', textDecoration: 'none', fontSize: '1rem' }}>
                   Sign In
                 </Link>
               </Typography>
             </Box>
           </Box>
         </Paper>
-      </Box>
-    </Container>
+      </Container>
+    </Box>
   );
 };
