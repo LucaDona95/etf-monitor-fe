@@ -2,7 +2,6 @@ import { useState, useContext, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { AppContext } from "../App";
 import {
-  Container,
   Paper,
   Typography,
   TextField,
@@ -20,22 +19,21 @@ export const ChangePassword = () => {
   const { userData, setUserData, isCheckingAuth } = useContext(AppContext);
   const navigate = useNavigate();
 
-  // Stati del form
+  // Form states
   const [oldPassword, setOldPassword] = useState("");
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
 
-  // Stati di gestione UI e errori
+  // UI and Error states
   const [saving, setSaving] = useState(false);
   const [errorMsg, setErrorMsg] = useState("");
   const [successMsg, setSuccessMsg] = useState("");
   
-  // NUOVO: Stato specifico per l'errore di formato della nuova password
+  // Specific state for password validation message
   const [passwordFormatError, setPasswordFormatError] = useState("");
 
-  // Definizione della tua espressione regolare
-  // Nota: in JS togliamo il doppio escaping dello slash (\\d diventa \d) rispetto alle stringhe Java/JSON
-    const passwordRegex = /^(?=.*[A-Za-z])(?=.*\d)(?=.*[@$!%*#?&]).{8,30}$/;
+  // Password requirements regex
+  const passwordRegex = /^(?=.*[A-Za-z])(?=.*\d)(?=.*[@$!%*#?&]).{8,30}$/;
 
   const forceGlobalLogout = () => {
     setUserData(null);
@@ -43,46 +41,44 @@ export const ChangePassword = () => {
     navigate("/login");
   };
 
-  // Protezione della pagina all'avvio (F5)
+  // Protect route on mount
   useEffect(() => {
     if (!isCheckingAuth && !userData?.jwtToken) {
       forceGlobalLogout();
     }
   }, [isCheckingAuth, userData]);
 
-  // --- NUOVO: VALIDAZIONE ON BLUR (Quando l'utente finisce di editare) ---
+  // ON BLUR Validation
   const handlePasswordBlur = () => {
     if (!newPassword) {
-      setPasswordFormatError(""); // Se è vuoto non mostriamo l'errore di formato (ci penserà il required)
+      setPasswordFormatError(""); 
       return;
     }
 
     if (!passwordRegex.test(newPassword)) {
-        setPasswordFormatError("Password must be between 8 and 30 characters long and contain at least one letter, one number, and one special character (@$!%*#?&).");    } else {
-      setPasswordFormatError(""); // Formato corretto, puliamo l'errore
+      setPasswordFormatError("Password must be between 8 and 30 characters long and contain at least one letter, one number, and one special character (@$!%*#?&).");    
+    } else {
+      setPasswordFormatError(""); 
     }
   };
 
-  // --- CHIAMATA API CON RICORSIONE ---
+  // API Call
   const handleSubmit = async (e: React.FormEvent, isRetry = false) => {
     e.preventDefault();
     setErrorMsg("");
     setSuccessMsg("");
 
-    // 1. Controllo preliminare sul formato (se l'utente clicca invio senza triggerare il blur)
     if (!passwordRegex.test(newPassword)) {
       setErrorMsg("The new password does not meet the security requirements.");
       setPasswordFormatError("Password must contain at least one letter, one number, and one special character (@$!%*#?&).");
       return;
     }
 
-    // 2. Validazione Frontend: Controllo corrispondenza nuova password
     if (newPassword !== confirmPassword) {
       setErrorMsg("The new passwords do not match!");
       return;
     }
 
-    // 3. Validazione Frontend minima
     if (!oldPassword || !newPassword) {
       setErrorMsg("All fields are required.");
       return;
@@ -108,12 +104,12 @@ export const ChangePassword = () => {
       setConfirmPassword("");
       setPasswordFormatError("");
 
-        setUserData(null);
-        localStorage.clear();
+      setUserData(null);
+      localStorage.clear();
 
-        navigate("/login", { 
-    state: { passwordChangedSuccess: true } 
-  });
+      navigate("/login", { 
+        state: { passwordChangedSuccess: true } 
+      });
 
     } catch (error: any) {
       console.error("Error changing password:", error);
@@ -155,88 +151,92 @@ export const ChangePassword = () => {
   }
 
   return (
-    <Container component="main" maxWidth="sm" sx={{ mt: 4 }}>
-      <Paper elevation={3} sx={{ p: 4, borderRadius: 2 }}>
-        
-        <Box sx={{ display: 'flex', alignItems: 'center', mb: 3 }}>
-          <Button 
-            startIcon={<ArrowBackIcon />} 
+    <Paper 
+      sx={{ 
+        width: { xs: "94%", sm: "80%", md: "50%", lg: "35%" }, 
+        margin: "2rem auto", 
+        padding: { xs: "1.5rem", sm: "2.5rem" },
+        borderRadius: 2 
+      }}
+    >
+      <Box sx={{ display: 'flex', alignItems: 'center', mb: 4 }}>
+        <Button 
+          startIcon={<ArrowBackIcon />} 
+          onClick={() => navigate("/profile")}
+          sx={{ mr: 2, fontWeight: "bold" }}
+          size="small"
+        >
+          Back
+        </Button>
+        <Typography variant="h4" component="h1" sx={{ fontWeight: "bold", fontSize: { xs: "1.6rem", sm: "2rem" } }}>
+          Change Password
+        </Typography>
+      </Box>
+
+      {errorMsg && <Alert severity="error" sx={{ mb: 3 }}>{errorMsg}</Alert>}
+      {successMsg && <Alert severity="success" sx={{ mb: 3 }}>{successMsg}</Alert>}
+
+      <Box component="form" onSubmit={(e) => handleSubmit(e, false)} noValidate>
+        <TextField
+          margin="normal"
+          required
+          fullWidth
+          name="oldPassword"
+          label="Current Password"
+          type="password"
+          value={oldPassword}
+          onChange={(e) => setOldPassword(e.target.value)}
+          disabled={saving}
+        />
+
+        <TextField
+          margin="normal"
+          required
+          fullWidth
+          name="newPassword"
+          label="New Password"
+          type="password"
+          value={newPassword}
+          onChange={(e) => setNewPassword(e.target.value)}
+          onBlur={handlePasswordBlur} 
+          error={Boolean(passwordFormatError)} 
+          helperText={passwordFormatError} 
+          disabled={saving}
+        />
+
+        <TextField
+          margin="normal"
+          required
+          fullWidth
+          name="confirmPassword"
+          label="Confirm New Password"
+          type="password"
+          value={confirmPassword}
+          onChange={(e) => setConfirmPassword(e.target.value)}
+          disabled={saving}
+        />
+
+        <Stack direction="row" spacing={2} sx={{ mt: 4 }}>
+          <Button
+            fullWidth
+            variant="outlined"
             onClick={() => navigate("/profile")}
-            sx={{ mr: 2 }}
+            disabled={saving}
           >
-            Back
+            Cancel
           </Button>
-          <Typography variant="h5" component="h1" sx={{ fontWeight: "bold" }}>
-            Change Password
-          </Typography>
-        </Box>
-
-        {errorMsg && <Alert severity="error" sx={{ mb: 2 }}>{errorMsg}</Alert>}
-        {successMsg && <Alert severity="success" sx={{ mb: 2 }}>{successMsg}</Alert>}
-
-        <Box component="form" onSubmit={(e) => handleSubmit(e, false)} noValidate>
-          <TextField
-            margin="normal"
-            required
+          <Button
+            type="submit"
             fullWidth
-            name="oldPassword"
-            label="Current Password"
-            type="password"
-            value={oldPassword}
-            onChange={(e) => setOldPassword(e.target.value)}
-            disabled={saving}
-          />
-
-          {/* CAMPO NUOVA PASSWORD CON INTERCETTAZIONE BLUR ED ERRORE INTEGRATO */}
-          <TextField
-            margin="normal"
-            required
-            fullWidth
-            name="newPassword"
-            label="New Password"
-            type="password"
-            value={newPassword}
-            onChange={(e) => setNewPassword(e.target.value)}
-            onBlur={handlePasswordBlur} // <-- Attiva la validazione quando l'utente esce dal campo
-            error={Boolean(passwordFormatError)} // Colorerà il campo di rosso se c'è un errore
-            helperText={passwordFormatError} // Mostra il testo dell'errore sotto il campo
-            disabled={saving}
-          />
-
-          <TextField
-            margin="normal"
-            required
-            fullWidth
-            name="confirmPassword"
-            label="Confirm New Password"
-            type="password"
-            value={confirmPassword}
-            onChange={(e) => setConfirmPassword(e.target.value)}
-            disabled={saving}
-          />
-
-          <Stack direction="row" spacing={2} sx={{ mt: 4 }}>
-            <Button
-              fullWidth
-              variant="outlined"
-              onClick={() => navigate("/profile")}
-              disabled={saving}
-            >
-              Cancel
-            </Button>
-            <Button
-              type="submit"
-              fullWidth
-              variant="contained"
-              color="primary"
-              startIcon={saving ? <CircularProgress size={20} color="inherit" /> : <SaveIcon />}
-              disabled={saving || Boolean(passwordFormatError)} // Disabilita il tasto se la regex fallisce
-            >
-              Update Password
-            </Button>
-          </Stack>
-        </Box>
-      </Paper>
-    </Container>
+            variant="contained"
+            color="primary"
+            startIcon={saving ? <CircularProgress size={20} color="inherit" /> : <SaveIcon />}
+            disabled={saving || Boolean(passwordFormatError)} 
+          >
+            Update Password
+          </Button>
+        </Stack>
+      </Box>
+    </Paper>
   );
 };

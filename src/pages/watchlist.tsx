@@ -13,13 +13,16 @@ import {
   TableRow,
   TableSortLabel,
   Typography,
-  Checkbox, // <-- AGGIUNTO
-  Button,   // <-- AGGIUNTO
-  Stack,    // <-- AGGIUNTO
-  CircularProgress
+  Checkbox,
+  Button,
+  Stack,
+  CircularProgress,
+  IconButton,
+  Tooltip
 } from "@mui/material";
 import { useSearchParams } from "react-router-dom";
-import DeleteIcon from '@mui/material/Icon';
+import DeleteIcon from '@mui/icons-material/Delete';
+import NotificationsActiveIcon from '@mui/icons-material/NotificationsActive';
 
 interface ColumnConfig {
   id: string;
@@ -27,13 +30,14 @@ interface ColumnConfig {
   sortKey?: string; 
 }
 
+// Translated and unified column configurations matching EtfPage responsive criteria
 const COLUMNS: ColumnConfig[] = [
-  { id: "name", label: "Nome del Fondo" }, 
-  { id: "fundSize", label: "Dim. del fondo", sortKey: "fundSize" },
+  { id: "name", label: "Fund name" }, 
+  { id: "fundSize", label: "Fund Size", sortKey: "fundSize" },
   { id: "ter", label: "TER", sortKey: "ter" },
-  { id: "y1Yield", label: "1A in %", sortKey: "y1Yield" },
+  { id: "y1Yield", label: "1Y in %", sortKey: "y1Yield" },
   { id: "price", label: "Price", sortKey: "regularMarketPrice" },
-  { id: "distribution", label: "Distribuzione" }, 
+  { id: "distribution", label: "Distribution" }, 
   { id: "isin", label: "ISIN", sortKey: "isin" },
   { id: "symbol", label: "Ticker", sortKey: "symbol" },
 ];
@@ -46,7 +50,6 @@ export const Watchlist = () => {
   const [tableData, setTableData] = useState([] as any[]);
   const [searchParams, setSearchParams] = useSearchParams();
 
-  // STRE-NUOVO: Stato per collezionare gli ID degli elementi selezionati della watchlist
   const [selectedIds, setSelectedIds] = useState<number[]>([]);
   const [actionLoading, setActionLoading] = useState(false);
 
@@ -137,7 +140,6 @@ export const Watchlist = () => {
 
   const handleSelectAllClick = (event: React.ChangeEvent<HTMLInputElement>) => {
     if (event.target.checked) {
-     
       const newSelecteds = tableData.map((n) => n.watchlistId).filter(id => id != null);
       setSelectedIds(newSelecteds);
       return;
@@ -158,7 +160,6 @@ export const Watchlist = () => {
     setSelectedIds(newSelected);
   };
 
-  // --- METODO REMOVE FROM WATCHLIST SISTEMATO ---
   const removeFromWatchlist = async (watchlistIdList: number[], isRetry = false) => {
     if (isCheckingAuth) return;
 
@@ -169,7 +170,6 @@ export const Watchlist = () => {
 
     setActionLoading(true);
 
-    // Trasforma l'array [1, 2, 3] nella stringa separata da virgole "1,2,3"
     const idsCommaSeparated = watchlistIdList.join(",");
     let loadUrl = "http://localhost:8081/api/v1/watchlists?ids=" + idsCommaSeparated;
 
@@ -180,12 +180,11 @@ export const Watchlist = () => {
     try {
       await axios.delete(loadUrl, config);
       
-      // Filtra i dati rimuovendo localmente gli elementi il cui watchlistId è stato eliminato
       const updatedList = tableData.filter((m: any) => !watchlistIdList.includes(m.watchlistId));
 
       setTableData(updatedList);
       setTotalItems(updatedList.length);
-      setSelectedIds([]); // Ripulisce la selezione dopo l'eliminazione
+      setSelectedIds([]); 
     } catch (error: any) {
       console.error("Error removing from watchlist:", error);
 
@@ -216,6 +215,23 @@ export const Watchlist = () => {
 
   const isSelected = (watchlistId: number) => selectedIds.indexOf(watchlistId) !== -1;
 
+  // Mirroring cell responsive styles from EtfPage
+  const getResponsiveCellStyles = (columnId: string) => {
+    const basePadding = { xs: "10px 8px", md: "16px 12px" };
+    
+    switch (columnId) {
+      case "ter":
+      case "symbol":
+        return { padding: basePadding, display: { xs: 'none', sm: 'table-cell' } };
+      case "distribution":
+        return { padding: basePadding, display: { xs: 'none', md: 'table-cell' } };
+      case "isin":
+        return { padding: basePadding, display: { xs: 'none', lg: 'table-cell' } };
+      default:
+        return { padding: basePadding };
+    }
+  };
+
   if (isCheckingAuth) {
     return (
       <Box sx={{ display: "flex", justifyContent: "center", alignItems: "center", height: "80vh" }}>
@@ -225,37 +241,65 @@ export const Watchlist = () => {
   }
 
   return (
-    <Paper sx={{ width: "80%", overflow: "hidden", margin: "3rem auto", p: 3 }}>
-      <Stack direction="row" justifyContent="space-between" alignItems="center" sx={{ mb: 3 }}>
+    <Paper 
+      sx={{ 
+        width: { xs: "98%", md: "92%", lg: "85%" }, 
+        overflow: "hidden", 
+        margin: "2rem auto", 
+        paddingBottom: "1rem" 
+      }}
+    >
+      {/* Header layout unified to match EtfPage */}
+      <Box 
+        sx={{ 
+          display: "flex", 
+          flexDirection: { xs: "column", sm: "row" }, 
+          justifyContent: "space-between", 
+          alignItems: { xs: "flex-start", sm: "center" }, 
+          gap: 2,
+          padding: "1.5rem 1.5rem 1rem 1.5rem" 
+        }}
+      >
         <Box>
-          <Typography variant="h4" component="h1" sx={{ fontWeight: "bold" }}>
+          <Typography 
+            variant="h4" 
+            component="h1" 
+            sx={{ 
+              fontWeight: "bold",
+              fontSize: { xs: '1.5rem', sm: '1.8rem', md: '2rem' },
+              letterSpacing: "-0.5px"
+            }}
+          >
             WATCHLIST ITEMS
           </Typography>
-          <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5 }}>
+          <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5, fontWeight: 500 }}>
             {totalItems} items in your watchlist.
           </Typography>
         </Box>
 
-        {/* BOTTONE DI RIMOZIONE ATTIVO SOLO SE CI SONO SELEZIONI */}
         <Button
           variant="contained"
           color="error"
           disabled={selectedIds.length === 0 || actionLoading}
           onClick={() => removeFromWatchlist(selectedIds)}
-          startIcon={actionLoading ? <CircularProgress size={16} color="inherit" /> : null}
+          startIcon={actionLoading ? <CircularProgress size={16} color="inherit" /> : <DeleteIcon />}
+          sx={{ 
+            width: { xs: "100%", sm: "auto" }, 
+            fontWeight: "bold",
+            px: 3
+          }}
         >
           {selectedIds.length > 0 
-            ? `Remove from watchlist (${selectedIds.length})` 
+            ? `Remove selection (${selectedIds.length})` 
             : "Remove from watchlist"}
         </Button>
-      </Stack>
+      </Box>
 
-      <TableContainer sx={{ maxHeight: "35rem" }}>
-        <Table stickyHeader aria-label="sticky table">
+      <TableContainer sx={{ overflowX: "auto" }}>
+        <Table stickyHeader aria-label="sticky table" sx={{ minWidth: { xs: '100%', sm: 800 } }}>
           <TableHead>
             <TableRow>
-              {/* NUOVA COLONNA HEADER PER IL SELEZIONA TUTTI */}
-              <TableCell padding="checkbox">
+              <TableCell padding="checkbox" sx={{ padding: { xs: "10px 8px", md: "16px 12px" } }}>
                 <Checkbox
                   color="primary"
                   indeterminate={selectedIds.length > 0 && selectedIds.length < tableData.length}
@@ -266,7 +310,13 @@ export const Watchlist = () => {
               </TableCell>
 
               {COLUMNS.map((column) => (
-                <TableCell key={column.id}>
+                <TableCell 
+                  key={column.id}
+                  sx={{ 
+                    fontWeight: "bold", 
+                    ...getResponsiveCellStyles(column.id) 
+                  }}
+                >
                   {column.sortKey ? (
                     <TableSortLabel
                       active={searchData.sortField === column.sortKey}
@@ -277,6 +327,12 @@ export const Watchlist = () => {
                           : "desc"
                       }
                       onClick={() => handleSortRequest(column.sortKey!)}
+                      sx={{
+                        '& .MuiTableSortLabel-icon': {
+                          color: searchData.sortField === column.sortKey ? 'primary.main' : 'inherit',
+                          opacity: searchData.sortField === column.sortKey ? 1 : 0.4,
+                        },
+                      }}
                     >
                       {column.label}
                     </TableSortLabel>
@@ -285,7 +341,7 @@ export const Watchlist = () => {
                   )}
                 </TableCell>
               ))}
-              <TableCell>Edit Alerts</TableCell>
+              <TableCell sx={{ fontWeight: "bold", padding: { xs: "10px 8px", md: "16px 12px" }, textAlign: "center" }}>Alerts</TableCell>
             </TableRow>
           </TableHead>
           <TableBody>
@@ -299,8 +355,7 @@ export const Watchlist = () => {
                   aria-checked={isItemSelected}
                   selected={isItemSelected}
                 >
-                  {/* CELLA CHECKBOX PER LA SINGOLA RIGA */}
-                  <TableCell padding="checkbox">
+                  <TableCell padding="checkbox" sx={{ padding: { xs: "12px 8px", md: "16px 12px" } }}>
                     <Checkbox
                       color="primary"
                       checked={isItemSelected}
@@ -309,28 +364,38 @@ export const Watchlist = () => {
                   </TableCell>
                   
                   <TableCell
-                    sx={{ cursor: "pointer", color: "primary.main", fontWeight: 500 }}
+                    sx={{ 
+                      cursor: "pointer", 
+                      color: "primary.main", 
+                      fontWeight: "bold",
+                      padding: { xs: "12px 8px", md: "16px 12px" },
+                      maxWidth: { xs: '140px', sm: 'none' },
+                      overflow: 'hidden',
+                      textOverflow: 'ellipsis',
+                      whiteSpace: { xs: 'nowrap', sm: 'normal' }
+                    }}
                     onClick={() => showEtf(row)}
                   >
                     {row.longName != null ? row.longName : row.shortName}
                   </TableCell>
-                  <TableCell>{row.fundSize}</TableCell>
-                  <TableCell>{row.ter}</TableCell>
-                  <TableCell>{row.y1Yield}</TableCell>
-                  <TableCell>{row.regularMarketPrice}</TableCell>
-                  <TableCell>{row.type}</TableCell>
-                  <TableCell>{row.isin}</TableCell>
-                  <TableCell>{row.symbol}</TableCell>
+                  <TableCell sx={getResponsiveCellStyles("fundSize")}>{row.fundSize}</TableCell>
+                  <TableCell sx={getResponsiveCellStyles("ter")}>{row.ter}</TableCell>
+                  <TableCell sx={getResponsiveCellStyles("y1Yield")}>{row.y1Yield}</TableCell>
+                  <TableCell sx={getResponsiveCellStyles("price")}>{row.regularMarketPrice}</TableCell>
+                  <TableCell sx={getResponsiveCellStyles("distribution")}>{row.type}</TableCell>
+                  <TableCell sx={getResponsiveCellStyles("isin")}>{row.isin}</TableCell>
+                  <TableCell sx={getResponsiveCellStyles("symbol")}>{row.symbol}</TableCell>
 
-                  <TableCell>
-                    <Button
-                      type="submit"
-                      variant="contained"
-                      color="primary"
-                      onClick={() => toWatchlistAletList(row)}
-                    >
-                      GO
-                    </Button>
+                  <TableCell sx={{ padding: { xs: "8px", md: "12px" }, textAlign: "center" }}>
+                    <Tooltip title="Manage Alerts" arrow>
+                      <IconButton
+                        onClick={() => toWatchlistAletList(row)}
+                        color="primary"
+                        sx={{ '&:hover': { backgroundColor: "action.hover" } }}
+                      >
+                        <NotificationsActiveIcon />
+                      </IconButton>
+                    </Tooltip>
                   </TableCell>
                 </TableRow>
               );
