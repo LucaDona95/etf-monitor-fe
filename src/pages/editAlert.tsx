@@ -8,9 +8,10 @@ import {
   CircularProgress,
   Stack,
   Chip,
-  Grid,
   Divider,
   Checkbox,
+  IconButton,
+  Tooltip,
 } from "@mui/material";
 import { AppContext } from "../App";
 import { AlertDialog } from "../components/alertDialog";
@@ -25,6 +26,11 @@ import {
 } from "@mui/material";
 
 import { useParams, useLocation, useNavigate } from "react-router-dom";
+import AddCircleOutlineIcon from "@mui/icons-material/AddCircleOutline";
+import EditIcon from "@mui/icons-material/Edit";
+import DeleteIcon from "@mui/icons-material/Delete";
+import CheckCircleIcon from "@mui/icons-material/CheckCircle";
+import CancelIcon from "@mui/icons-material/Cancel";
 
 export const EditAlert = () => {
   const { id } = useParams<{ id: string }>();
@@ -44,8 +50,6 @@ export const EditAlert = () => {
     ["YIELD_UNDER", "Yield Under"],
   ]);
 
-  const buttonContainer = { display: "flex", float: "right", gap: "1rem" };
-
   const [alertConditionList, setAlertConditionList] = useState([] as any[]);
   const [watchlistInfo, setWatchlistInfo] = useState<any>(null);
 
@@ -54,7 +58,6 @@ export const EditAlert = () => {
   const [editingAlert, setEditingAlert] = useState({});
   const [loading, setLoading] = useState(true);
 
-  // STR-NUOVO: Stato per memorizzare gli ID degli alert selezionati
   const [selectedAlertIds, setSelectedAlertIds] = useState<number[]>([]);
 
   useEffect(() => {
@@ -68,11 +71,10 @@ export const EditAlert = () => {
     if (id) {
       loadData(Number(id));
     } else {
-      console.error("Nessun ID trovato nell'URL della pagina.");
+      console.error("No ID found in page URL.");
       setLoading(false);
     }
   }, [isCheckingAuth, userData?.jwtToken, id]);
-
 
   const loadData = async (watchlistId: number, isRetry = false) => {
     setLoading(true);
@@ -81,9 +83,8 @@ export const EditAlert = () => {
       headers: { Authorization: "Bearer " + userData?.jwtToken },
     };
 
-  	try {
+    try {
       const response = await axios.get(loadUrl, config);
-      console.log("Watchlist data loaded:", response.data);
 
       setWatchlistInfo({
         id: response.data.id,
@@ -99,7 +100,7 @@ export const EditAlert = () => {
       });
 
       setAlertConditionList(response.data.alertConditionList || []);
-      setSelectedAlertIds([]); // Svuota la selezione ad ogni caricamento pulito
+      setSelectedAlertIds([]); 
     } catch (error: any) {
       console.error("Error loading watchlist details:", error);
 
@@ -129,7 +130,6 @@ export const EditAlert = () => {
     }
   };
 
-  // --- GESTIONE SELEZIONE CHECKBOX ---
   const handleSelectAllClick = (event: React.ChangeEvent<HTMLInputElement>) => {
     if (event.target.checked) {
       const newSelecteds = alertConditionList.map((n) => n.id);
@@ -158,7 +158,6 @@ export const EditAlert = () => {
     setSelectedAlertIds(newSelected);
   };
 
-  // --- APERTURA DIALOG NUOVO ALERT ---
   const toNewAlert = () => {
     let tmp = {
       id: null,
@@ -190,7 +189,6 @@ export const EditAlert = () => {
     setAlertDialogOpen(true);
   };
 
-  // --- SALVATAGGIO / AGGIORNAMENTO UN SIGNOLO ALERT (POST / PUT) ---
   const handleSaveAlert = async (alertData: any, isRetry = false) => {
     let url = `http://localhost:8081/api/v1/watchlists/${id}/alerts`;
     if (alertData.id != null) {
@@ -205,7 +203,7 @@ export const EditAlert = () => {
       active: alertData.active,
       threshold: alertData.threshold,
       conditionType: alertData.conditionType,
-      checkInterval: alertData.checkInterval!=""?alertData.checkInterval:null
+      checkInterval: alertData.checkInterval !== "" ? alertData.checkInterval : null
     };
 
     try {
@@ -214,7 +212,6 @@ export const EditAlert = () => {
       } else {
         await axios.post(url, request, config);
       }
-      console.log("Alert saved successfully");
       if (id) await loadData(Number(id));
     } catch (error: any) {
       console.error("Error saving alert:", error);
@@ -239,11 +236,9 @@ export const EditAlert = () => {
     }
   };
 
-  // --- CANCELLAZIONE DI GRUPPO / SINGOLA DI N ALERT (DELETE) ---
   const handleDeleteAlerts = async (ids: number[], isRetry = false) => {
     if (ids.length === 0) return;
     
-    // Uniamo gli ID separati da virgola per la query string
     let url = `http://localhost:8081/api/v1/watchlists/${id}/alerts?ids=${ids.join(",")}`;
     const config = {
       headers: { Authorization: "Bearer " + userData?.jwtToken },
@@ -251,7 +246,6 @@ export const EditAlert = () => {
 
     try {
       await axios.delete(url, config);
-      console.log("Alerts deleted successfully");
       if (id) await loadData(Number(id));
     } catch (error: any) {
       console.error("Error deleting alerts:", error);
@@ -276,7 +270,6 @@ export const EditAlert = () => {
     }
   };
 
-  // --- APERTURA DIALOG APERTURA MODIFICA ALERT ---
   const toEditAlert = (alertData: any) => {
     let tmp = {
       id: alertData.id,
@@ -310,6 +303,14 @@ export const EditAlert = () => {
     setAlertDialogOpen(true);
   };
 
+  const getResponsiveCellStyles = (columnId: string) => {
+    const basePadding = { xs: "12px 8px", md: "16px 12px" };
+    if (columnId === "threshold") {
+      return { padding: basePadding, display: { xs: 'none', sm: 'table-cell' } };
+    }
+    return { padding: basePadding };
+  };
+
   if (isCheckingAuth || loading) {
     return (
       <Box sx={{ display: "flex", justifyContent: "center", alignItems: "center", height: "80vh" }}>
@@ -319,24 +320,48 @@ export const EditAlert = () => {
   }
 
   return (
-    <Box sx={{ width: "80%", margin: "3rem auto" }}>
+    <Box sx={{ width: { xs: "98%", md: "92%", lg: "85%" }, margin: "2rem auto" }}>
       {watchlistInfo && (
-        <Paper elevation={3} sx={{ p: 3, mb: 4, borderRadius: 2, bgcolor: "background.paper" }}>
-          <Grid container spacing={2} alignItems="center">
-            <Grid size={{ xs: 12, md: 7 }}>
-              <Typography variant="h4" component="h1" sx={{ fontWeight: "bold", mb: 1 }}>
+        <Paper 
+          elevation={3} 
+          sx={{ 
+            p: 3, 
+            mb: 4, 
+            borderRadius: 2, 
+            bgcolor: "background.paper" 
+          }}
+        >
+          {/* Sostituito Grid con una Box FlexBox nativa ed efficiente priva di bug di libreria */}
+          <Box 
+            sx={{ 
+              display: "flex", 
+              flexDirection: { xs: "column", md: "row" }, 
+              justifyContent: "space-between", 
+              alignItems: { xs: "flex-start", md: "center" },
+              gap: 3 
+            }}
+          >
+            <Box sx={{ width: { xs: "100%", md: "60%" } }}>
+              <Typography 
+                variant="h4" 
+                component="h1" 
+                sx={{ 
+                  fontWeight: "bold", 
+                  mb: 1.5,
+                  fontSize: { xs: '1.4rem', sm: '1.8rem', md: '2rem' } 
+                }}
+              >
                 {watchlistInfo.longName || watchlistInfo.shortName || "N/A"}
               </Typography>
-              <Stack direction="row" spacing={1} alignItems="center">
-                <Chip label={`ETF ID: ${watchlistInfo.etfId}`} color="secondary" size="small" sx={{ fontWeight: "bold" }} />
+              <Stack direction="row" spacing={1.5} alignItems="center" flexWrap="wrap" useFlexGap>
                 <Typography variant="body2" color="text.secondary">
-                  ISIN: <strong>{watchlistInfo.isin}</strong>
+                  ISIN: <strong style={{ color: '#f5f7fa' }}>{watchlistInfo.isin}</strong>
                 </Typography>
                 <Chip label={watchlistInfo.type} variant="outlined" size="small" />
               </Stack>
-            </Grid>
+            </Box>
 
-            <Grid size={{ xs: 12, md: 5 }}>
+            <Box sx={{ width: { xs: "100%", md: "auto" } }}>
               <Stack
                 direction="row"
                 spacing={3}
@@ -370,59 +395,74 @@ export const EditAlert = () => {
                   </Typography>
                 </Box>
               </Stack>
-            </Grid>
-          </Grid>
+            </Box>
+          </Box>
         </Paper>
       )}
 
-      <Paper sx={{ p: 3, overflow: "hidden" }}>
-        <Stack direction="row" justifyContent="space-between" alignItems="center" sx={{ mb: 3 }}>
+      <Paper sx={{ p: { xs: 2, sm: 3 }, overflow: "hidden" }}>
+        <Box 
+          sx={{ 
+            display: "flex", 
+            flexDirection: { xs: "column", sm: "row" }, 
+            justifyContent: "space-between", 
+            alignItems: { xs: "flex-start", sm: "center" }, 
+            gap: 2,
+            mb: 3
+          }}
+        >
           <Box>
             <Typography variant="h5" component="h2" sx={{ fontWeight: "bold" }}>
               ALERT CONDITIONS
             </Typography>
-            <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5 }}>
+            <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5, fontWeight: 500 }}>
               {alertConditionList.length} of 8 alerts active.
             </Typography>
           </Box>
 
-          <Box sx={buttonContainer}>
-            {/* STR-NUOVO: Il bottone COMPARE solo se ci sono elementi selezionati nella lista */}
+          <Stack 
+            direction={{ xs: "column", sm: "row" }} 
+            spacing={1.5} 
+            sx={{ width: { xs: "100%", sm: "auto" } }}
+          >
             {selectedAlertIds.length > 0 && (
               <Button
                 variant="contained"
                 color="error"
+                startIcon={<DeleteIcon />}
                 onClick={() => handleDeleteAlerts(selectedAlertIds)}
+                sx={{ fontWeight: "bold", width: { xs: "100%", sm: "auto" } }}
               >
                 Delete Selected ({selectedAlertIds.length})
               </Button>
             )}
             <Button
-              type="submit"
               variant="contained"
               color="primary"
               disabled={alertConditionList.length >= 8}
               onClick={toNewAlert}
+              startIcon={<AddCircleOutlineIcon />}
+              sx={{ fontWeight: "bold", px: 3, width: { xs: "100%", sm: "auto" } }}
             >
               ADD ALERT
             </Button>
-            <AlertDialog
-              availableAlertTypeList={availableAlertTypeList}
-              alertDialogOpen={alertDialogOpen}
-              setAlertDialogOpen={setAlertDialogOpen}
-              handleSaveAlert={handleSaveAlert}
-              editingAlert={editingAlert}
-              setEditingAlert={setEditingAlert}
-            />
-          </Box>
-        </Stack>
+          </Stack>
+
+          <AlertDialog
+            availableAlertTypeList={availableAlertTypeList}
+            alertDialogOpen={alertDialogOpen}
+            setAlertDialogOpen={setAlertDialogOpen}
+            handleSaveAlert={handleSaveAlert}
+            editingAlert={editingAlert}
+            setEditingAlert={setEditingAlert}
+          />
+        </Box>
 
         <TableContainer sx={{ maxHeight: "35rem" }}>
           <Table stickyHeader aria-label="sticky table">
             <TableHead>
               <TableRow>
-                {/* STR-NUOVO: Checkbox per selezionare/deselezionare tutto */}
-                <TableCell padding="checkbox">
+                <TableCell padding="checkbox" sx={{ padding: { xs: "10px 8px", md: "16px 12px" } }}>
                   <Checkbox
                     color="primary"
                     indeterminate={selectedAlertIds.length > 0 && selectedAlertIds.length < alertConditionList.length}
@@ -430,11 +470,10 @@ export const EditAlert = () => {
                     onChange={handleSelectAllClick}
                   />
                 </TableCell>
-                <TableCell>Tipo Condizione</TableCell>
-                <TableCell>Soglia</TableCell>
-                <TableCell>Attivo</TableCell>
-                <TableCell>Ultima Notifica</TableCell>
-                <TableCell align="center">Azioni</TableCell>
+                <TableCell sx={{ fontWeight: "bold" }}>Condition type</TableCell>
+                <TableCell sx={{ fontWeight: "bold", display: { xs: 'none', sm: 'table-cell' } }}>Threshold</TableCell>
+                <TableCell sx={{ fontWeight: "bold" }}>Status</TableCell>
+                <TableCell align="center" sx={{ fontWeight: "bold" }}>Edit</TableCell>
               </TableRow>
             </TableHead>
 
@@ -443,40 +482,56 @@ export const EditAlert = () => {
                 const isItemSelected = selectedAlertIds.indexOf(row.id) !== -1;
                 return (
                   <TableRow key={index} hover selected={isItemSelected}>
-                    {/* STR-NUOVO: Checkbox di riga */}
-                    <TableCell padding="checkbox">
+                    <TableCell padding="checkbox" sx={{ padding: { xs: "12px 8px", md: "16px 12px" } }}>
                       <Checkbox
                         color="primary"
                         checked={isItemSelected}
                         onChange={() => handleSelectRowClick(row.id)}
                       />
                     </TableCell>
-                    <TableCell>
+                    <TableCell sx={{ fontWeight: 500 }}>
                       {alertTypeMap.get(row.conditionType) || row.conditionType}
                     </TableCell>
-                    <TableCell>{row.threshold}</TableCell>
-                    <TableCell>{row.active ? "YES" : "NO"}</TableCell>
-                    <TableCell>{row.lastNotified || "Never"}</TableCell>
-                    <TableCell align="center">
-                      <Stack direction="row" spacing={1} justifyContent="center">
-                        <Button
-                          variant="contained"
-                          color="primary"
-                          size="small"
+                    <TableCell sx={getResponsiveCellStyles("threshold")}>
+                      {row.checkInterval != null ? `${row.threshold} — ${row.checkInterval}` : row.threshold}
+                    </TableCell>
+                    <TableCell sx={{ padding: { xs: "12px 8px", md: "16px 12px" } }}>
+                      {row.active ? (
+                        <Chip 
+                          icon={<CheckCircleIcon style={{ color: 'inherit', fontSize: '16px' }} />} 
+                          label="Active" 
+                          color="success" 
+                          size="small" 
+                          sx={{ fontWeight: "bold" }}
+                        />
+                      ) : (
+                        <Chip 
+                          icon={<CancelIcon style={{ color: 'inherit', fontSize: '16px' }} />} 
+                          label="Inactive" 
+                          variant="outlined"
+                          size="small" 
+                          sx={{ color: "text.secondary", borderColor: "divider" }}
+                        />
+                      )}
+                    </TableCell>
+                    <TableCell align="center" sx={{ padding: { xs: "8px", md: "12px" } }}>
+                      <Tooltip title="Modify Alert" arrow>
+                        <IconButton
                           onClick={() => toEditAlert(row)}
+                          color="primary"
+                          sx={{ '&:hover': { backgroundColor: "action.hover" } }}
                         >
-                          Edit
-                        </Button>
-                        
-                      </Stack>
+                          <EditIcon />
+                        </IconButton>
+                      </Tooltip>
                     </TableCell>
                   </TableRow>
                 );
               })}
               {alertConditionList.length === 0 && (
                 <TableRow>
-                  <TableCell colSpan={6} align="center" sx={{ py: 3 }}>
-                    <Typography color="text.secondary">
+                  <TableCell colSpan={5} align="center" sx={{ py: 4 }}>
+                    <Typography color="text.secondary" sx={{ fontWeight: 500 }}>
                       No alert conditions configured for this item.
                     </Typography>
                   </TableCell>

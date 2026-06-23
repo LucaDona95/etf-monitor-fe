@@ -1,11 +1,21 @@
 import {
-  Button, Box, MenuItem, Dialog, DialogTitle, DialogContent, DialogActions, 
-  Grid, TextField, FormControl, InputLabel, Select
+  Button, 
+  Box, 
+  MenuItem, 
+  Dialog, 
+  DialogTitle, 
+  DialogContent, 
+  DialogActions, 
+  TextField, 
+  FormControl, 
+  InputLabel, 
+  Select,
+  Stack,
+  Typography
 } from '@mui/material';
 import { FormControlLabel, Switch } from '@mui/material';
 import * as React from 'react';
 import { NumericFormat } from 'react-number-format';
-import type { NumericFormatProps } from 'react-number-format';
 
 interface CustomProps {
   onChange: (event: { target: { name: string; value: string } }) => void;
@@ -13,13 +23,13 @@ interface CustomProps {
 }
 
 const yieldIntervalList = [
-  { value: "D1", label: "1 giorno" },
-  { value: "M1", label: "1 mese" },
-  { value: "M3", label: "3 mesi" },
-  { value: "M6", label: "6 mesi" },
-  { value: "Y1", label: "1 anno" },
-  { value: "Y3", label: "3 anni" },
-  { value: "Y5", label: "5 anni" },
+  { value: "D1", label: "1 day" },
+  { value: "M1", label: "1 month" },
+  { value: "M3", label: "3 months" },
+  { value: "M6", label: "6 months" },
+  { value: "Y1", label: "1 year" },
+  { value: "Y3", label: "3 years" },
+  { value: "Y5", label: "5 years" },
 ];
 
 const PercentageFormat = React.forwardRef<HTMLInputElement, CustomProps>(
@@ -44,7 +54,7 @@ const PercentageFormat = React.forwardRef<HTMLInputElement, CustomProps>(
         allowNegative={true}
         isAllowed={(values) => {
           const { floatValue } = values;
-          return floatValue === undefined ? true : floatValue <= 100 && floatValue >=-100;
+          return floatValue === undefined ? true : floatValue <= 100 && floatValue >= -100;
         }}
       />
     );
@@ -71,10 +81,6 @@ const AmountFormat = React.forwardRef<HTMLInputElement, CustomProps>(
         decimalScale={2}
         decimalSeparator="."
         allowNegative={false}
-        isAllowed={(values) => {
-          
-          return true;
-        }}
       />
     );
   },
@@ -98,7 +104,6 @@ export const AlertDialog = (props: any) => {
     props.setEditingAlert(updatedAlert);
   };
 
-  // FISSA-CORREZIONE: Allineato all'uso di .active invece di .isActive
   const handleSetActive = (event: any) => {
     const updatedAlert = { 
       ...props.editingAlert, 
@@ -120,7 +125,7 @@ export const AlertDialog = (props: any) => {
     let data = {
       id: props.editingAlert.id,
       action: props.editingAlert.id === null ? "INSERT" : "UPDATE",
-      active: !!props.editingAlert.active, // Forza il cast a booleano sicuro
+      active: !!props.editingAlert.active, 
       checkInterval: props.editingAlert.yieldInterval,
       conditionType: props.editingAlert.alertType,
       threshold: threshold
@@ -130,7 +135,6 @@ export const AlertDialog = (props: any) => {
     props.handleSaveAlert(data);
   };
 
-  // UX Fix per etichette leggibili nella select se in modalità Modifica
   const displayAlertTypeList = [...props.availableAlertTypeList];
   if (props.editingAlert?.alertType && !displayAlertTypeList.some(item => item.value === props.editingAlert.alertType)) {
     displayAlertTypeList.push({
@@ -146,35 +150,52 @@ export const AlertDialog = (props: any) => {
       aria-labelledby='dialog-edit-alert' 
       aria-describedby='alert-edit-content'
       fullWidth
-      maxWidth="xs"
+      maxWidth="sm" // Aumentato leggermente a "sm" per dare miglior respiro ai campi su desktop, restando fluido su mobile
+      PaperProps={{
+        sx: {
+          borderRadius: 3,
+          p: { xs: 1, sm: 2 }
+        }
+      }}
     >
-      <DialogTitle id='dialog-edit-alert'>
-        {props.editingAlert?.id ? "Edit Alert" : "Add New Alert"}
+      <DialogTitle id='dialog-edit-alert' sx={{ pb: 1 }}>
+        <Typography variant="h5" component="span" sx={{ fontWeight: "bold" }}>
+          {props.editingAlert?.id ? "Edit Alert Condition" : "Create New Alert"}
+        </Typography>
       </DialogTitle>
       
       <DialogContent id='alert-edit-content'>
-        <Box sx={{ pt: 1 }}>
-          <Grid container spacing={2}>
+        <Box sx={{ pt: 2 }}>
+          {/* Stack verticale flessibile al posto della vecchia Grid */}
+          <Stack spacing={2.5}>
             
-            <Grid size={{ xs: 12 }}>
-              <FormControl fullWidth>
-                <InputLabel id="alert-type-label">Alert Type</InputLabel>
-                <Select
-                  labelId="alert-type-label"
-                  id="alert-type-id"
-                  value={props.editingAlert.alertType || ''}
-                  label="Alert Type"
-                  onChange={handleAlertTypeChange}
-                  disabled={props.editingAlert?.id !== null}
-                >
-                  {displayAlertTypeList.map((row: any, index: number) => (
-                    <MenuItem key={index} value={row.value}>{row.label}</MenuItem>
-                  ))}
-                </Select>
-              </FormControl>
-            </Grid>
+            <FormControl fullWidth>
+              <InputLabel id="alert-type-label">Alert Type</InputLabel>
+              <Select
+                labelId="alert-type-label"
+                id="alert-type-id"
+                value={props.editingAlert.alertType || ''}
+                label="Alert Type"
+                onChange={handleAlertTypeChange}
+                disabled={props.editingAlert?.id !== null}
+              >
+                {displayAlertTypeList.map((row: any, index: number) => (
+                  <MenuItem key={index} value={row.value}>{row.label}</MenuItem>
+                ))}
+              </Select>
+            </FormControl>
 
-            <Grid size={{ xs: 12 }}>
+            <Box 
+              sx={{ 
+                display: "flex", 
+                alignItems: "center", 
+                bgcolor: "action.hover", 
+                p: 1.5, 
+                borderRadius: 2,
+                border: "1px solid",
+                borderColor: "divider"
+              }}
+            >
               <FormControlLabel 
                 control={
                   <Switch 
@@ -183,86 +204,89 @@ export const AlertDialog = (props: any) => {
                     onChange={handleSetActive} 
                   />
                 } 
-                label="Is Active" 
+                label={
+                  <Typography sx={{ fontWeight: 500, ml: 1 }}>
+                    Enable Alert Activation
+                  </Typography>
+                } 
               />
-            </Grid>
+            </Box>
 
             {/* --- SEZIONE PREZZO --- */}
             {(props.editingAlert.alertType === 'PRICE_ABOVE' || props.editingAlert.alertType === 'PRICE_UNDER') && (
-              <Grid size={{ xs: 12 }}>
-                <TextField 
-                  fullWidth 
-                  label='Price Threshold' 
-                  variant="outlined"
-                  slotProps={{ input: { inputComponent: AmountFormat as any } }}
-                  value={props.editingAlert.price || ''} 
-                  onChange={(e: any) => {
-                    props.setEditingAlert({ ...props.editingAlert, price: e.target.value });
-                  }}
-                />
-              </Grid>
+              <TextField 
+                fullWidth 
+                label='Price Threshold' 
+                variant="outlined"
+                slotProps={{ input: { inputComponent: AmountFormat as any } }}
+                value={props.editingAlert.price || ''} 
+                onChange={(e: any) => {
+                  props.setEditingAlert({ ...props.editingAlert, price: e.target.value });
+                }}
+              />
             )}
             
             {/* --- SEZIONE VOLUME --- */}
             {(props.editingAlert.alertType === 'VOLUME_ABOVE' || props.editingAlert.alertType === 'VOLUME_UNDER') && (
-              <Grid size={{ xs: 12 }}>
-                <TextField 
-                  fullWidth 
-                  label='Volume Threshold' 
-                  variant="outlined"
-                  slotProps={{ input: { inputComponent: AmountFormat as any } }}
-                  value={props.editingAlert.volume || ''} 
-                  onChange={(e: any) => {
-                    props.setEditingAlert({ ...props.editingAlert, volume: e.target.value });
-                  }}
-                />
-              </Grid>
+              <TextField 
+                fullWidth 
+                label='Volume Threshold' 
+                variant="outlined"
+                slotProps={{ input: { inputComponent: AmountFormat as any } }}
+                value={props.editingAlert.volume || ''} 
+                onChange={(e: any) => {
+                  props.setEditingAlert({ ...props.editingAlert, volume: e.target.value });
+                }}
+              />
             )}
 
             {/* --- SEZIONE RENDIMENTO (YIELD) --- */}
             {(props.editingAlert.alertType === 'YIELD_ABOVE' || props.editingAlert.alertType === 'YIELD_UNDER') && (
-              <>
-                <Grid size={{ xs: 12 }}>
-                  <TextField 
-                    fullWidth 
-                    label='Yield % Threshold' 
-                    variant="outlined"
-                    slotProps={{ input: { inputComponent: PercentageFormat as any } }}
-                    value={props.editingAlert.etfYield || ''} 
-                    onChange={(e: any) => {
-                      props.setEditingAlert({ ...props.editingAlert, etfYield: e.target.value });
-                    }}
-                  />
-                </Grid>
-                <Grid size={{ xs: 12 }}>
-                  <FormControl fullWidth>
-                    <InputLabel id="yield-interval-label">Interval</InputLabel>
-                    <Select
-                      labelId="yield-interval-label"
-                      id="yield-interval-id"
-                      value={props.editingAlert.yieldInterval || ''}
-                      label="Interval"
-                      onChange={handleYieldIntervalChange}
-                    >
-                      {yieldIntervalList.map((row: any, index: number) => (
-                        <MenuItem key={index} value={row.value}>{row.label}</MenuItem>
-                      ))}
-                    </Select>
-                  </FormControl>
-                </Grid>
-              </>
+              <Stack spacing={2.5}>
+                <TextField 
+                  fullWidth 
+                  label='Yield % Threshold' 
+                  variant="outlined"
+                  slotProps={{ input: { inputComponent: PercentageFormat as any } }}
+                  value={props.editingAlert.etfYield || ''} 
+                  onChange={(e: any) => {
+                    props.setEditingAlert({ ...props.editingAlert, etfYield: e.target.value });
+                  }}
+                />
+                <FormControl fullWidth>
+                  <InputLabel id="yield-interval-label">Interval</InputLabel>
+                  <Select
+                    labelId="yield-interval-label"
+                    id="yield-interval-id"
+                    value={props.editingAlert.yieldInterval || ''}
+                    label="Interval"
+                    onChange={handleYieldIntervalChange}
+                  >
+                    {yieldIntervalList.map((row: any, index: number) => (
+                      <MenuItem key={index} value={row.value}>{row.label}</MenuItem>
+                    ))}
+                  </Select>
+                </FormControl>
+              </Stack>
             )}
 
-          </Grid>
+          </Stack>
         </Box>
       </DialogContent>
 
-      <DialogActions>
-        <Button onClick={handleClose}>Cancel</Button>
+      <DialogActions sx={{ p: 3, pt: 1, gap: 1 }}>
+        <Button 
+          onClick={handleClose}
+          color="inherit"
+          sx={{ fontWeight: "bold" }}
+        >
+          Cancel
+        </Button>
         <Button 
           onClick={handleSave}
           variant="contained"
           disabled={!props.editingAlert.alertType}
+          sx={{ fontWeight: "bold", px: 3 }}
         >
           Save
         </Button>
