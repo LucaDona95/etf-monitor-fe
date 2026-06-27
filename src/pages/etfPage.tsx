@@ -120,7 +120,15 @@ export const EtfPage = () => {
 
     const config: any = { params: { ...paramsForBackend } };
     if (tokenToUse) {
-      config.headers = { Authorization: "Bearer " + tokenToUse };
+      config.headers = { Authorization: "Bearer " + tokenToUse ,
+        'ngrok-skip-browser-warning': 'true',
+        'Content-Type': 'application/json'
+      };
+    }else{
+      config.headers = {
+        'ngrok-skip-browser-warning': 'true',
+        'Content-Type': 'application/json'
+      }
     }
 
     try {
@@ -134,9 +142,12 @@ export const EtfPage = () => {
       if (error.response?.status === 401 && !isRetry) {
         try {
           const currentRefreshToken = localStorage.getItem("refreshToken");
-          const refreshResponse = await axios.post("http://localhost:8081/api/v1/auth/refresh-token", {
+          const refreshResponse = await axios.post(import.meta.env.VITE_API_URL+"/api/v1/auth/refresh-token", {
             token: currentRefreshToken
-          });
+          },{ headers: { 
+             'ngrok-skip-browser-warning': 'true',
+              'Content-Type': 'application/json'
+           } });
           const newAccessToken = refreshResponse.data.token;
           if (refreshResponse.data.refreshToken) {
             localStorage.setItem("refreshToken", refreshResponse.data.refreshToken);
@@ -189,8 +200,9 @@ export const EtfPage = () => {
       return;
     }
 
-    let loadUrl = "http://localhost:8081/api/v1/watchlists?ids=" + etfData.watchlistId;
-    const config = { headers: { Authorization: "Bearer " + tokenToUse } };
+    let loadUrl = import.meta.env.VITE_API_URL+"/api/v1/watchlists?ids=" + etfData.watchlistId;
+    const config = { headers: { Authorization: "Bearer " + tokenToUse, 'ngrok-skip-browser-warning': 'true',
+              'Content-Type': 'application/json' } };
 
     try {
       await axios.delete(loadUrl, config);
@@ -200,7 +212,12 @@ export const EtfPage = () => {
       if (error.response?.status === 401 && !isRetry) {
         try {
           const currentRefreshToken = localStorage.getItem("refreshToken");
-          const refreshResponse = await axios.post("http://localhost:8081/api/v1/auth/refresh-token", { token: currentRefreshToken });
+          const refreshResponse = await axios.post(import.meta.env.VITE_API_URL+"/api/v1/auth/refresh-token", { token: currentRefreshToken },
+            { headers: { 
+             'ngrok-skip-browser-warning': 'true',
+              'Content-Type': 'application/json'
+           } }
+          );
           const newAccessToken = refreshResponse.data.token;
           if (refreshResponse.data.refreshToken) localStorage.setItem("refreshToken", refreshResponse.data.refreshToken);
           setUserData({ ...userData, jwtToken: newAccessToken });
@@ -226,8 +243,9 @@ export const EtfPage = () => {
     const tokenToUse = passedToken || userData?.jwtToken;
 
     
-    let loadUrl = "http://localhost:8081/api/v1/watchlists";
-    const config = { headers: { Authorization: "Bearer " + tokenToUse } };
+    let loadUrl = import.meta.env.VITE_API_URL+"/api/v1/watchlists";
+    const config = { headers: { Authorization: "Bearer " + tokenToUse,'ngrok-skip-browser-warning': 'true',
+              'Content-Type': 'application/json' } };
     let json = { etfId: etfData.id };
 
     try {
@@ -238,7 +256,12 @@ export const EtfPage = () => {
       if (error.response?.status === 401 && !isRetry) {
         try {
           const currentRefreshToken = localStorage.getItem("refreshToken");
-          const refreshResponse = await axios.post("http://localhost:8081/api/v1/auth/refresh-token", { token: currentRefreshToken });
+          const refreshResponse = await axios.post(import.meta.env.VITE_API_URL+"/api/v1/auth/refresh-token", { token: currentRefreshToken },
+            { headers: { 
+             'ngrok-skip-browser-warning': 'true',
+              'Content-Type': 'application/json'
+           } }
+          );
           const newAccessToken = refreshResponse.data.token;
           if (refreshResponse.data.refreshToken) localStorage.setItem("refreshToken", refreshResponse.data.refreshToken);
           setUserData({ ...userData, jwtToken: newAccessToken });

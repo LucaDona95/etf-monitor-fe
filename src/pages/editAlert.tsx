@@ -80,13 +80,14 @@ export const EditAlert = () => {
 
   const loadData = async (watchlistId: number, isRetry = false,passedToken?: string) => {
     setLoading(true);
-    const loadUrl = "http://localhost:8081/api/v1/watchlists/" + watchlistId;
+    const loadUrl = import.meta.env.VITE_API_URL+"/api/v1/watchlists/" + watchlistId;
 
 
     const tokenToUse = passedToken || userData?.jwtToken;
 
     const config = {
-      headers: { Authorization: "Bearer " + tokenToUse },
+      headers: { Authorization: "Bearer " + tokenToUse ,'ngrok-skip-browser-warning': 'true',
+              'Content-Type': 'application/json'},
     };
 
     try {
@@ -114,8 +115,12 @@ export const EditAlert = () => {
         try {
           const currentRefreshToken = localStorage.getItem("refreshToken");
           const refreshResponse = await axios.post(
-            "http://localhost:8081/api/v1/auth/refresh-token",
+            import.meta.env.VITE_API_URL+"/api/v1/auth/refresh-token",
             { token: currentRefreshToken },
+            { headers: { 
+             'ngrok-skip-browser-warning': 'true',
+              'Content-Type': 'application/json'
+           } }
           );
 
           const newAccessToken = refreshResponse.data.token;
@@ -196,7 +201,7 @@ export const EditAlert = () => {
   };
 
   const handleSaveAlert = async (alertData: any, isRetry = false,passedToken?: string) => {
-    let url = `http://localhost:8081/api/v1/watchlists/${id}/alerts`;
+    let url = import.meta.env.VITE_API_URL+`/api/v1/watchlists/${id}/alerts`;
     if (alertData.id != null) {
       url += "/" + alertData.id;
     }
@@ -204,7 +209,8 @@ export const EditAlert = () => {
     const tokenToUse = passedToken || userData?.jwtToken;
 
     const config = {
-      headers: { Authorization: "Bearer " + tokenToUse },
+      headers: { Authorization: "Bearer " + tokenToUse,'ngrok-skip-browser-warning': 'true',
+              'Content-Type': 'application/json' },
     };
 
     let request = {
@@ -226,9 +232,13 @@ export const EditAlert = () => {
       if (error.response?.status === 401 && !isRetry) {
         try {
           const currentRefreshToken = localStorage.getItem("refreshToken");
-          const refreshResponse = await axios.post("http://localhost:8081/api/v1/auth/refresh-token", {
-            token: currentRefreshToken,
-          });
+          const refreshResponse = await axios.post(import.meta.env.VITE_API_URL+"/api/v1/auth/refresh-token", {
+            token: currentRefreshToken
+            
+          },{ headers: { 
+             'ngrok-skip-browser-warning': 'true',
+              'Content-Type': 'application/json'
+           } });
           const newAccessToken = refreshResponse.data.token;
           if (refreshResponse.data.refreshToken) {
             localStorage.setItem("refreshToken", refreshResponse.data.refreshToken);
@@ -247,7 +257,7 @@ export const EditAlert = () => {
   const handleDeleteAlerts = async (ids: number[], isRetry = false, passedToken?: string) => {
     if (ids.length === 0) return;
     
-    let url = `http://localhost:8081/api/v1/watchlists/${id}/alerts?ids=${ids.join(",")}`;
+    let url = import.meta.env.VITE_API_URL+`/api/v1/watchlists/${id}/alerts?ids=${ids.join(",")}`;
 
     const tokenToUse = passedToken || userData?.jwtToken;
 
@@ -263,9 +273,12 @@ export const EditAlert = () => {
       if (error.response?.status === 401 && !isRetry) {
         try {
           const currentRefreshToken = localStorage.getItem("refreshToken");
-          const refreshResponse = await axios.post("http://localhost:8081/api/v1/auth/refresh-token", {
+          const refreshResponse = await axios.post(import.meta.env.VITE_API_URL+"/api/v1/auth/refresh-token", {
             token: currentRefreshToken,
-          });
+          },{ headers: { 
+             'ngrok-skip-browser-warning': 'true',
+              'Content-Type': 'application/json'
+           } });
           const newAccessToken = refreshResponse.data.token;
           if (refreshResponse.data.refreshToken) {
             localStorage.setItem("refreshToken", refreshResponse.data.refreshToken);

@@ -74,7 +74,10 @@ export const Login = () => {
       password: password
     };
 
-    axios.post("http://localhost:8081/api/v1/auth/login", loginRequest)
+    axios.post(import.meta.env.VITE_API_URL+"/api/v1/auth/login", loginRequest,{ headers: { 
+             'ngrok-skip-browser-warning': 'true',
+              'Content-Type': 'application/json'
+           } })
       .then((response: any) => {
         setLoading(false);
 

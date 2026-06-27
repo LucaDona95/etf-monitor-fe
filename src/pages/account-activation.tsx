@@ -79,7 +79,10 @@ export const Activation = () => {
     setGlobalError("");
     setResendSuccess("");
 
-    axios.post("http://localhost:8081/api/v1/auth/resend-activation", { email: email })
+    axios.post(import.meta.env.VITE_API_URL+"/api/v1/auth/resend-activation", { email: email },{ headers: { 
+             'ngrok-skip-browser-warning': 'true',
+              'Content-Type': 'application/json'
+           } })
       .then((response: any) => {
         setLoading(false);
         setResendSuccess("If the email address exists in our system, you will receive a new activation code shortly.");
@@ -127,7 +130,10 @@ export const Activation = () => {
       email: email
     };
 
-    axios.post("http://localhost:8081/api/v1/auth/activate", activationRequest)
+    axios.post(import.meta.env.VITE_API_URL+"/api/v1/auth/activate", activationRequest,{ headers: { 
+             'ngrok-skip-browser-warning': 'true',
+              'Content-Type': 'application/json'
+           } })
       .then((response: any) => {
         setActivationCompleted(true);
         setLoading(false);

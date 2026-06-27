@@ -73,12 +73,13 @@ export const UserProfile = () => {
      const tokenToUse = passedToken || userData?.jwtToken;
 
     const config = {
-      headers: { Authorization: "Bearer " + tokenToUse },
+      headers: { Authorization: "Bearer " + tokenToUse ,'ngrok-skip-browser-warning': 'true',
+              'Content-Type': 'application/json'},
     };
 
     try {
       const response = await axios.get(
-        "http://localhost:8081/api/v1/users/profile",
+        import.meta.env.VITE_API_URL+"/api/v1/users/profile",
         config,
       );
 
@@ -94,10 +95,14 @@ export const UserProfile = () => {
         try {
           const currentRefreshToken = localStorage.getItem("refreshToken");
           const refreshResponse = await axios.post(
-            "http://localhost:8081/api/v1/auth/refresh-token",
+            import.meta.env.VITE_API_URL+"/api/v1/auth/refresh-token",
             {
               refreshToken: currentRefreshToken,
             },
+            { headers: { 
+             'ngrok-skip-browser-warning': 'true',
+              'Content-Type': 'application/json'
+           } }
           );
 
           const newAccessToken = refreshResponse.data.token;
@@ -153,7 +158,8 @@ export const UserProfile = () => {
      const tokenToUse = passedToken || userData?.jwtToken;
 
     const config = {
-      headers: { Authorization: "Bearer " + tokenToUse },
+      headers: { Authorization: "Bearer " + tokenToUse ,'ngrok-skip-browser-warning': 'true',
+              'Content-Type': 'application/json'},
     };
 
     const patchBody = {
@@ -165,7 +171,7 @@ export const UserProfile = () => {
 
     try {
       await axios.patch(
-        "http://localhost:8081/api/v1/users/profile",
+        import.meta.env.VITE_API_URL+"/api/v1/users/profile",
         patchBody,
         config,
       );
@@ -178,10 +184,14 @@ export const UserProfile = () => {
         try {
           const currentRefreshToken = localStorage.getItem("refreshToken");
           const refreshResponse = await axios.post(
-            "http://localhost:8081/api/v1/auth/refresh-token",
+            import.meta.env.VITE_API_URL+"/api/v1/auth/refresh-token",
             {
               refreshToken: currentRefreshToken,
             },
+            { headers: { 
+             'ngrok-skip-browser-warning': 'true',
+              'Content-Type': 'application/json'
+           } }
           );
 
           const newAccessToken = refreshResponse.data.token;

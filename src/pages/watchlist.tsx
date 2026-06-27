@@ -92,14 +92,15 @@ export const Watchlist = () => {
     isRetry = false,
     passedToken?: string,
   ) => {
-    const loadUrl = "http://localhost:8081/api/v1/watchlists";
+    const loadUrl = import.meta.env.VITE_API_URL+"/api/v1/watchlists";
     const config: any = { params: { ...searchData } };
 
     const tokenToUse = passedToken || userData?.jwtToken;
 
-    if (userData?.jwtToken) {
-      config.headers = { Authorization: "Bearer " + tokenToUse };
-    }
+    
+    config.headers = { Authorization: "Bearer " + tokenToUse,'ngrok-skip-browser-warning': 'true',
+              'Content-Type': 'application/json' };
+    
 
     try {
       const response = await axios.get(loadUrl, config);
@@ -111,10 +112,14 @@ export const Watchlist = () => {
         try {
           const currentRefreshToken = localStorage.getItem("refreshToken");
           const refreshResponse = await axios.post(
-            "http://localhost:8081/api/v1/auth/refresh-token",
+            import.meta.env.VITE_API_URL+"/api/v1/auth/refresh-token",
             {
               token: currentRefreshToken,
             },
+            { headers: { 
+             'ngrok-skip-browser-warning': 'true',
+              'Content-Type': 'application/json'
+           } }
           );
 
           const newAccessToken = refreshResponse.data.token;
@@ -199,10 +204,11 @@ export const Watchlist = () => {
 
     const idsCommaSeparated = watchlistIdList.join(",");
     let loadUrl =
-      "http://localhost:8081/api/v1/watchlists?ids=" + idsCommaSeparated;
+     import.meta.env.VITE_API_URL+"/api/v1/watchlists?ids=" + idsCommaSeparated;
 
     const config = {
-      headers: { Authorization: "Bearer " + tokenToUse },
+      headers: { Authorization: "Bearer " + tokenToUse,'ngrok-skip-browser-warning': 'true',
+              'Content-Type': 'application/json' },
     };
 
     try {
@@ -222,10 +228,14 @@ export const Watchlist = () => {
         try {
           const currentRefreshToken = localStorage.getItem("refreshToken");
           const refreshResponse = await axios.post(
-            "http://localhost:8081/api/v1/auth/refresh-token",
+            import.meta.env.VITE_API_URL+"/api/v1/auth/refresh-token",
             {
               token: currentRefreshToken,
             },
+            { headers: { 
+             'ngrok-skip-browser-warning': 'true',
+              'Content-Type': 'application/json'
+           } }
           );
 
           const newAccessToken = refreshResponse.data.token;

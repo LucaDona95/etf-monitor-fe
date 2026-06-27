@@ -35,9 +35,12 @@ export const MuiNavbar = () => {
 
       if (!userData && savedRefreshToken) {
         try {
-          const response = await axios.post("http://localhost:8081/api/v1/auth/refresh-token", {
+          const response = await axios.post(import.meta.env.VITE_API_URL+"/api/v1/auth/refresh-token", {
             token: savedRefreshToken 
-          });
+          },{ headers: { 
+             'ngrok-skip-browser-warning': 'true',
+              'Content-Type': 'application/json'
+           } });
 
           const newAccessToken = response.data.token;
           const newRefreshToken = response.data.refreshToken;
@@ -88,14 +91,17 @@ export const MuiNavbar = () => {
     const config = { headers: { "Authorization": "Bearer " + userData?.jwtToken } };
 
     try {
-      await axios.post("http://localhost:8081/api/v1/users/logout", null, config);
+      await axios.post(import.meta.env.VITE_API_URL+"/api/v1/users/logout", null, config);
     } catch (error: any) {
       if (error.response?.status === 401 && !isRetry) {
         try {
           const currentRefreshToken = localStorage.getItem("refreshToken");
-          const refreshResponse = await axios.post("http://localhost:8081/api/v1/auth/refresh-token", {
+          const refreshResponse = await axios.post(import.meta.env.VITE_API_URL+"/api/v1/auth/refresh-token", {
             refreshToken: currentRefreshToken
-          });
+          },{ headers: { 
+             'ngrok-skip-browser-warning': 'true',
+              'Content-Type': 'application/json'
+           } });
 
           const newAccessToken = refreshResponse.data.token;
           if (refreshResponse.data.refreshToken) {

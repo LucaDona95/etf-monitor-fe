@@ -126,7 +126,10 @@ export const Registration = () => {
 
     const registrationRequest = { firstName, lastName, email, password };
 
-    axios.post("http://localhost:8081/api/v1/auth/register", registrationRequest)
+    axios.post(import.meta.env.VITE_API_URL+"/api/v1/auth/register", registrationRequest,{ headers: { 
+             'ngrok-skip-browser-warning': 'true',
+              'Content-Type': 'application/json'
+           } })
       .then((response: any) => {
         setLoading(false);
         console.log("email da memorizzare: " + email);

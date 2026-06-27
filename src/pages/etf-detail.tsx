@@ -34,8 +34,12 @@ export const EtfDetail = () => {
 
     const loadUrl = `${import.meta.env.VITE_API_URL}/api/v1/etfs/${etfId}`;
     const config = userData?.jwtToken
-      ? { headers: { Authorization: `Bearer ${tokenToUse}` } }
-      : {};
+      ? { headers: { Authorization: `Bearer ${tokenToUse}`, 'ngrok-skip-browser-warning': 'true',
+              'Content-Type': 'application/json' } }
+      : { headers: { 
+             'ngrok-skip-browser-warning': 'true',
+              'Content-Type': 'application/json'
+           } };
 
     try {
       const response = await axios.get(loadUrl, config);
@@ -46,8 +50,11 @@ export const EtfDetail = () => {
         try {
           const currentRefreshToken = localStorage.getItem("refreshToken");
           const refreshResponse = await axios.post(
-            "http://localhost:8081/api/v1/auth/refresh-token",
-            { token: currentRefreshToken },
+            import.meta.env.VITE_API_URL+"/api/v1/auth/refresh-token",
+            { token: currentRefreshToken },{ headers: { 
+             'ngrok-skip-browser-warning': 'true',
+              'Content-Type': 'application/json'
+           } }
           );
 
           const newAccessToken = refreshResponse.data.token;
@@ -104,7 +111,8 @@ export const EtfDetail = () => {
     setActionLoading(true);
     // Sostituito localhost con la variabile d'ambiente .env
     const loadUrl = `${import.meta.env.VITE_API_URL}/api/v1/watchlists`;
-    const config = { headers: { Authorization: "Bearer " + tokenToUse } };
+    const config = { headers: { Authorization: "Bearer " + tokenToUse, 'ngrok-skip-browser-warning': 'true',
+              'Content-Type': 'application/json' } };
     const json = { etfId: currentEtf.id };
 
     try {
@@ -116,7 +124,10 @@ export const EtfDetail = () => {
           const currentRefreshToken = localStorage.getItem("refreshToken");
           const refreshResponse = await axios.post(`${import.meta.env.VITE_API_URL}/api/v1/auth/refresh-token`, {
             token: currentRefreshToken
-          });
+          },{ headers: { 
+             'ngrok-skip-browser-warning': 'true',
+              'Content-Type': 'application/json'
+           } });
           const newAccessToken = refreshResponse.data.token;
           if (refreshResponse.data.refreshToken) {
             localStorage.setItem("refreshToken", refreshResponse.data.refreshToken);
@@ -142,7 +153,8 @@ export const EtfDetail = () => {
 
     setActionLoading(true);
     const loadUrl = `${import.meta.env.VITE_API_URL}/api/v1/watchlists?ids=${currentEtf.watchlistId}`;
-    const config = { headers: { Authorization: "Bearer " + tokenToUse } };
+    const config = { headers: { Authorization: "Bearer " + tokenToUse, 'ngrok-skip-browser-warning': 'true',
+              'Content-Type': 'application/json' } };
 
     try {
       await axios.delete(loadUrl, config);
@@ -153,7 +165,10 @@ export const EtfDetail = () => {
           const currentRefreshToken = localStorage.getItem("refreshToken");
           const refreshResponse = await axios.post(`${import.meta.env.VITE_API_URL}/api/v1/auth/refresh-token`, {
             token: currentRefreshToken
-          });
+          },{ headers: { 
+             'ngrok-skip-browser-warning': 'true',
+              'Content-Type': 'application/json'
+           } });
           const newAccessToken = refreshResponse.data.token;
           if (refreshResponse.data.refreshToken) {
             localStorage.setItem("refreshToken", refreshResponse.data.refreshToken);
