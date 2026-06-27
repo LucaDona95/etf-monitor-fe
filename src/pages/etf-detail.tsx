@@ -109,7 +109,7 @@ export const EtfDetail = () => {
     const tokenToUse = passedToken || userData?.jwtToken;
 
     setActionLoading(true);
-    // Sostituito localhost con la variabile d'ambiente .env
+    
     const loadUrl = `${import.meta.env.VITE_API_URL}/api/v1/watchlists`;
     const config = { headers: { Authorization: "Bearer " + tokenToUse, 'ngrok-skip-browser-warning': 'true',
               'Content-Type': 'application/json' } };
