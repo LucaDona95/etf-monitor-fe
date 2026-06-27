@@ -16,7 +16,7 @@ import {
 import axios from 'axios';
 
 export const Login = () => {
-  const { setUserData } = useContext(AppContext);
+  const { setUserData ,isCheckingAuth} = useContext(AppContext);
   const navigate = useNavigate();
   const location = useLocation(); 
 
@@ -34,12 +34,22 @@ export const Login = () => {
   const [isAccountInactive, setIsAccountInactive] = useState(false);
 
   useEffect(() => {
+
+    if (isCheckingAuth) return;
+
+      const token = localStorage.getItem("refreshToken");
+      if (token) {
+      
+        navigate("/etf");
+        return;
+      }
+
     if (location.state?.passwordChangedSuccess) {
       console.log("password changed ok");
       setSuccessMsg("Password updated successfully! Please log in again with your new credentials.");
       window.history.replaceState({}, document.title);
     }
-  }, [location]);
+  }, [location,isCheckingAuth]);
 
   const handleEmailBlur = () => {
     if (!loginEmail) {

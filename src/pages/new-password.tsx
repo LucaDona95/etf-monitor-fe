@@ -43,9 +43,15 @@ export const ChangePassword = () => {
 
   // Protect route on mount
   useEffect(() => {
-    if (!isCheckingAuth && !userData?.jwtToken) {
-      forceGlobalLogout();
+
+    const token = localStorage.getItem("refreshToken");
+    if (!token) {
+      setUserData(null);
+      navigate("/login");
+      return;
     }
+
+
   }, [isCheckingAuth, userData]);
 
   // ON BLUR Validation
@@ -63,7 +69,10 @@ export const ChangePassword = () => {
   };
 
   // API Call
-  const handleSubmit = async (e: React.FormEvent, isRetry = false) => {
+  const handleSubmit = async (e: React.FormEvent, isRetry = false, passedToken?: string) => {
+
+  const tokenToUse = passedToken || userData?.jwtToken;
+
     e.preventDefault();
     setErrorMsg("");
     setSuccessMsg("");
@@ -87,7 +96,7 @@ export const ChangePassword = () => {
     setSaving(true);
 
     const config = {
-      headers: { Authorization: "Bearer " + userData?.jwtToken }
+      headers: { Authorization: "Bearer " + tokenToUse }
     };
 
     const requestBody = {
@@ -129,7 +138,7 @@ export const ChangePassword = () => {
           setUserData({ ...userData, jwtToken: newAccessToken });
 
           setSaving(false);
-          await handleSubmit(e, true);
+          await handleSubmit(e, true,newAccessToken);
         } catch (refreshError) {
           forceGlobalLogout();
         }

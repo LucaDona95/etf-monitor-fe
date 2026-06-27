@@ -100,7 +100,10 @@ export const EtfPage = () => {
     setSearchParams(params);
   };
 
-  const loadData = async (searchData: any, isRetry = false) => {
+  const loadData = async (searchData: any, isRetry = false,passedToken?: string) => {
+
+     const tokenToUse = passedToken || userData?.jwtToken;
+
     const loadUrl = import.meta.env.VITE_API_URL + "/api/v1/etfs";
     const paramsForBackend = {
       ...searchData,
@@ -116,8 +119,8 @@ export const EtfPage = () => {
     });
 
     const config: any = { params: { ...paramsForBackend } };
-    if (userData?.jwtToken) {
-      config.headers = { Authorization: "Bearer " + userData.jwtToken };
+    if (tokenToUse) {
+      config.headers = { Authorization: "Bearer " + tokenToUse };
     }
 
     try {
@@ -139,11 +142,11 @@ export const EtfPage = () => {
             localStorage.setItem("refreshToken", refreshResponse.data.refreshToken);
           }
           setUserData({ ...userData, jwtToken: newAccessToken });
-          await loadData(searchData, true);
+          await loadData(searchData, true,newAccessToken);
         } catch (refreshError) {
           setUserData(null);
           localStorage.clear();
-          await loadData(searchData, true);
+          navigate("/etf");
         }
       }
     }
@@ -173,8 +176,12 @@ export const EtfPage = () => {
     navigate(`/etf/${etfData.id}`);
   };
 
-  const removeFromWatchlist = async (etfData: any, isRetry = false) => {
+  const removeFromWatchlist = async (etfData: any, isRetry = false,passedToken?: string) => {
     if (isCheckingAuth) return;
+
+
+    const tokenToUse = passedToken || userData?.jwtToken;
+
 
     if (!userData?.jwtToken) {
       console.log("Utente non loggato. Reindirizzamento al login...");
@@ -183,7 +190,7 @@ export const EtfPage = () => {
     }
 
     let loadUrl = "http://localhost:8081/api/v1/watchlists?ids=" + etfData.watchlistId;
-    const config = { headers: { Authorization: "Bearer " + userData.jwtToken } };
+    const config = { headers: { Authorization: "Bearer " + tokenToUse } };
 
     try {
       await axios.delete(loadUrl, config);
@@ -207,7 +214,7 @@ export const EtfPage = () => {
     }
   };
 
-  const addToWatchlist = async (etfData: any, isRetry = false) => {
+  const addToWatchlist = async (etfData: any, isRetry = false,passedToken?: string) => {
     if (isCheckingAuth) return;
 
     if (!userData?.jwtToken) {
@@ -216,8 +223,11 @@ export const EtfPage = () => {
       return;
     }
 
+    const tokenToUse = passedToken || userData?.jwtToken;
+
+    
     let loadUrl = "http://localhost:8081/api/v1/watchlists";
-    const config = { headers: { Authorization: "Bearer " + userData.jwtToken } };
+    const config = { headers: { Authorization: "Bearer " + tokenToUse } };
     let json = { etfId: etfData.id };
 
     try {
@@ -232,7 +242,7 @@ export const EtfPage = () => {
           const newAccessToken = refreshResponse.data.token;
           if (refreshResponse.data.refreshToken) localStorage.setItem("refreshToken", refreshResponse.data.refreshToken);
           setUserData({ ...userData, jwtToken: newAccessToken });
-          await addToWatchlist(etfData, true);
+          await addToWatchlist(etfData, true,newAccessToken);
         } catch (refreshError) {
           setUserData(null);
           localStorage.clear();

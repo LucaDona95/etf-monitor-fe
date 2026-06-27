@@ -18,7 +18,7 @@ import CheckCircleOutlineIcon from '@mui/icons-material/CheckCircleOutline';
 
 export const Activation = () => {
   const navigate = useNavigate();
-  const { userData, setUserData } = useContext(AppContext);
+  const { userData, setUserData,isCheckingAuth } = useContext(AppContext);
 
   const emailFromContext = userData?.email || "";
   const isFromLogin = userData?.isFromLogin || false; 
@@ -35,10 +35,20 @@ export const Activation = () => {
   const [resendSuccess, setResendSuccess] = useState("");
 
   useEffect(() => {
+
+     if (isCheckingAuth) return;
+  
+      const token = localStorage.getItem("refreshToken");
+      if (token) {
+      
+        navigate("/etf");
+        return;
+      }
+
     if (emailFromContext) {
       setEmail(emailFromContext);
     }
-  }, [emailFromContext]);
+  }, [emailFromContext,isCheckingAuth]);
 
   const handleEmailBlur = () => {
     if (!email) {

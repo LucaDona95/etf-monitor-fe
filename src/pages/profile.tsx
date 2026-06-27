@@ -44,18 +44,36 @@ export const UserProfile = () => {
   const [globalError, setGlobalError] = useState("");
   const [successMessage, setSuccessMessage] = useState("");
 
+    useEffect(() => {
+    if (isCheckingAuth) return;
+
+    const token = localStorage.getItem("refreshToken");
+    if (!token) {
+      setUserData(null);
+      navigate("/login");
+      return;
+    }
+
+  
+    fetchProfileData();
+  
+  }, [isCheckingAuth]);
+
+
   const forceGlobalLogout = () => {
     setUserData(null);
     localStorage.clear();
     navigate("/login");
   };
 
-  const fetchProfileData = async (isRetry = false) => {
+  const fetchProfileData = async (isRetry = false,passedToken?: string) => {
     setLoading(true);
     setGlobalError("");
 
+     const tokenToUse = passedToken || userData?.jwtToken;
+
     const config = {
-      headers: { Authorization: "Bearer " + userData?.jwtToken },
+      headers: { Authorization: "Bearer " + tokenToUse },
     };
 
     try {
@@ -91,7 +109,7 @@ export const UserProfile = () => {
           }
 
           setUserData({ ...userData, jwtToken: newAccessToken });
-          await fetchProfileData(true);
+          await fetchProfileData(true,newAccessToken);
         } catch (refreshError) {
           forceGlobalLogout();
         }
@@ -103,15 +121,6 @@ export const UserProfile = () => {
     }
   };
 
-  useEffect(() => {
-    if (isCheckingAuth) return;
-
-    if (userData?.jwtToken) {
-      fetchProfileData();
-    } else {
-      forceGlobalLogout();
-    }
-  }, [isCheckingAuth, userData?.jwtToken]);
 
   const handleEnableEdit = () => {
     setProfileBackup({
@@ -136,13 +145,15 @@ export const UserProfile = () => {
     setGlobalError("");
   };
 
-  const handleSaveChanges = async (isRetry = false) => {
+  const handleSaveChanges = async (isRetry = false,passedToken?: string) => {
     setSaving(true);
     setGlobalError("");
     setSuccessMessage("");
 
+     const tokenToUse = passedToken || userData?.jwtToken;
+
     const config = {
-      headers: { Authorization: "Bearer " + userData?.jwtToken },
+      headers: { Authorization: "Bearer " + tokenToUse },
     };
 
     const patchBody = {
@@ -182,7 +193,7 @@ export const UserProfile = () => {
           }
 
           setUserData({ ...userData, jwtToken: newAccessToken });
-          await handleSaveChanges(true);
+          await handleSaveChanges(true,newAccessToken);
         } catch (refreshError) {
           forceGlobalLogout();
         }
@@ -218,7 +229,7 @@ export const UserProfile = () => {
         borderRadius: 2,
       }}
     >
-      {/* Header Layout Responsivo */}
+     
       <Box
         sx={{
           display: "flex",
@@ -303,7 +314,7 @@ export const UserProfile = () => {
           </Typography>
         </Box>
 
-        {/* Nome & Cognome Condizionali */}
+      
         {isEditable ? (
           <>
             <TextField

@@ -63,10 +63,12 @@ export const EditAlert = () => {
   useEffect(() => {
     if (isCheckingAuth) return;
 
-    if (!userData?.jwtToken) {
+  const token = localStorage.getItem("refreshToken");
+  if (!token) {
+      setUserData(null);
       navigate("/login");
-      return;
-    }
+    return;
+  }
 
     if (id) {
       loadData(Number(id));
@@ -74,13 +76,17 @@ export const EditAlert = () => {
       console.error("No ID found in page URL.");
       setLoading(false);
     }
-  }, [isCheckingAuth, userData?.jwtToken, id]);
+  }, [isCheckingAuth, id]);
 
-  const loadData = async (watchlistId: number, isRetry = false) => {
+  const loadData = async (watchlistId: number, isRetry = false,passedToken?: string) => {
     setLoading(true);
     const loadUrl = "http://localhost:8081/api/v1/watchlists/" + watchlistId;
+
+
+    const tokenToUse = passedToken || userData?.jwtToken;
+
     const config = {
-      headers: { Authorization: "Bearer " + userData?.jwtToken },
+      headers: { Authorization: "Bearer " + tokenToUse },
     };
 
     try {
@@ -118,7 +124,7 @@ export const EditAlert = () => {
           }
 
           setUserData({ ...userData, jwtToken: newAccessToken });
-          await loadData(watchlistId, true);
+          await loadData(watchlistId, true,newAccessToken);
         } catch (refreshError) {
           setUserData(null);
           localStorage.clear();
@@ -126,7 +132,7 @@ export const EditAlert = () => {
         }
       }
     } finally {
-      if (!isRetry) setLoading(false);
+       setLoading(false);
     }
   };
 
@@ -189,14 +195,16 @@ export const EditAlert = () => {
     setAlertDialogOpen(true);
   };
 
-  const handleSaveAlert = async (alertData: any, isRetry = false) => {
+  const handleSaveAlert = async (alertData: any, isRetry = false,passedToken?: string) => {
     let url = `http://localhost:8081/api/v1/watchlists/${id}/alerts`;
     if (alertData.id != null) {
       url += "/" + alertData.id;
     }
 
+    const tokenToUse = passedToken || userData?.jwtToken;
+
     const config = {
-      headers: { Authorization: "Bearer " + userData?.jwtToken },
+      headers: { Authorization: "Bearer " + tokenToUse },
     };
 
     let request = {
@@ -212,7 +220,7 @@ export const EditAlert = () => {
       } else {
         await axios.post(url, request, config);
       }
-      if (id) await loadData(Number(id));
+      if (id) await loadData(Number(id),false,tokenToUse);
     } catch (error: any) {
       console.error("Error saving alert:", error);
       if (error.response?.status === 401 && !isRetry) {
@@ -226,7 +234,7 @@ export const EditAlert = () => {
             localStorage.setItem("refreshToken", refreshResponse.data.refreshToken);
           }
           setUserData({ ...userData, jwtToken: newAccessToken });
-          await handleSaveAlert(alertData, true);
+          await handleSaveAlert(alertData, true,newAccessToken);
         } catch (refreshError) {
           setUserData(null);
           localStorage.clear();
@@ -236,12 +244,15 @@ export const EditAlert = () => {
     }
   };
 
-  const handleDeleteAlerts = async (ids: number[], isRetry = false) => {
+  const handleDeleteAlerts = async (ids: number[], isRetry = false, passedToken?: string) => {
     if (ids.length === 0) return;
     
     let url = `http://localhost:8081/api/v1/watchlists/${id}/alerts?ids=${ids.join(",")}`;
+
+    const tokenToUse = passedToken || userData?.jwtToken;
+
     const config = {
-      headers: { Authorization: "Bearer " + userData?.jwtToken },
+      headers: { Authorization: "Bearer " + tokenToUse },
     };
 
     try {
@@ -260,7 +271,7 @@ export const EditAlert = () => {
             localStorage.setItem("refreshToken", refreshResponse.data.refreshToken);
           }
           setUserData({ ...userData, jwtToken: newAccessToken });
-          await handleDeleteAlerts(ids, true);
+          await handleDeleteAlerts(ids, true,newAccessToken);
         } catch (refreshError) {
           setUserData(null);
           localStorage.clear();

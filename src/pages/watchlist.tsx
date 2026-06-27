@@ -18,26 +18,26 @@ import {
   Stack,
   CircularProgress,
   IconButton,
-  Tooltip
+  Tooltip,
 } from "@mui/material";
 import { useSearchParams } from "react-router-dom";
-import DeleteIcon from '@mui/icons-material/Delete';
-import NotificationsActiveIcon from '@mui/icons-material/NotificationsActive';
+import DeleteIcon from "@mui/icons-material/Delete";
+import NotificationsActiveIcon from "@mui/icons-material/NotificationsActive";
 
 interface ColumnConfig {
   id: string;
   label: string;
-  sortKey?: string; 
+  sortKey?: string;
 }
 
 // Translated and unified column configurations matching EtfPage responsive criteria
 const COLUMNS: ColumnConfig[] = [
-  { id: "name", label: "Fund name" }, 
+  { id: "name", label: "Fund name" },
   { id: "fundSize", label: "Fund Size", sortKey: "fundSize" },
   { id: "ter", label: "TER", sortKey: "ter" },
   { id: "y1Yield", label: "1Y in %", sortKey: "y1Yield" },
   { id: "price", label: "Price", sortKey: "regularMarketPrice" },
-  { id: "distribution", label: "Distribution" }, 
+  { id: "distribution", label: "Distribution" },
   { id: "isin", label: "ISIN", sortKey: "isin" },
   { id: "symbol", label: "Ticker", sortKey: "symbol" },
 ];
@@ -61,6 +61,13 @@ export const Watchlist = () => {
   useEffect(() => {
     if (isCheckingAuth) return;
 
+    const token = localStorage.getItem("refreshToken");
+    if (!token) {
+      setUserData(null);
+      navigate("/login");
+      return;
+    }
+
     if (!searchParams.get("sortField")) {
       updateUrlParams(searchData);
       return;
@@ -80,12 +87,18 @@ export const Watchlist = () => {
     setSearchParams(params);
   };
 
-  const loadData = async (searchData: any, isRetry = false) => {
+  const loadData = async (
+    searchData: any,
+    isRetry = false,
+    passedToken?: string,
+  ) => {
     const loadUrl = "http://localhost:8081/api/v1/watchlists";
     const config: any = { params: { ...searchData } };
 
+    const tokenToUse = passedToken || userData?.jwtToken;
+
     if (userData?.jwtToken) {
-      config.headers = { Authorization: "Bearer " + userData.jwtToken };
+      config.headers = { Authorization: "Bearer " + tokenToUse };
     }
 
     try {
@@ -97,21 +110,27 @@ export const Watchlist = () => {
       if (error.response?.status === 401 && !isRetry) {
         try {
           const currentRefreshToken = localStorage.getItem("refreshToken");
-          const refreshResponse = await axios.post("http://localhost:8081/api/v1/auth/refresh-token", {
-            token: currentRefreshToken,
-          });
+          const refreshResponse = await axios.post(
+            "http://localhost:8081/api/v1/auth/refresh-token",
+            {
+              token: currentRefreshToken,
+            },
+          );
 
           const newAccessToken = refreshResponse.data.token;
           if (refreshResponse.data.refreshToken) {
-            localStorage.setItem("refreshToken", refreshResponse.data.refreshToken);
+            localStorage.setItem(
+              "refreshToken",
+              refreshResponse.data.refreshToken,
+            );
           }
 
           setUserData({ ...userData, jwtToken: newAccessToken });
-          await loadData(searchData, true);
+          await loadData(searchData, true, newAccessToken);
         } catch (refreshError) {
           setUserData(null);
           localStorage.clear();
-          await loadData(searchData, true);
+          navigate("/login");
         }
       }
     }
@@ -126,7 +145,7 @@ export const Watchlist = () => {
     updateUrlParams({
       ...searchData,
       sortField: columnName,
-      sortDirection: nextDirection
+      sortDirection: nextDirection,
     });
   };
 
@@ -140,7 +159,9 @@ export const Watchlist = () => {
 
   const handleSelectAllClick = (event: React.ChangeEvent<HTMLInputElement>) => {
     if (event.target.checked) {
-      const newSelecteds = tableData.map((n) => n.watchlistId).filter(id => id != null);
+      const newSelecteds = tableData
+        .map((n) => n.watchlistId)
+        .filter((id) => id != null);
       setSelectedIds(newSelecteds);
       return;
     }
@@ -154,16 +175,22 @@ export const Watchlist = () => {
     if (selectedIndex === -1) {
       newSelected = [...selectedIds, watchlistId];
     } else {
-      newSelected = selectedIds.filter(id => id !== watchlistId);
+      newSelected = selectedIds.filter((id) => id !== watchlistId);
     }
 
     setSelectedIds(newSelected);
   };
 
-  const removeFromWatchlist = async (watchlistIdList: number[], isRetry = false) => {
+  const removeFromWatchlist = async (
+    watchlistIdList: number[],
+    isRetry = false,
+    passedToken?: string,
+  ) => {
     if (isCheckingAuth) return;
 
-    if (!userData?.jwtToken) {
+    const tokenToUse = passedToken || userData?.jwtToken;
+
+    if (!tokenToUse) {
       navigate("/login");
       return;
     }
@@ -171,37 +198,46 @@ export const Watchlist = () => {
     setActionLoading(true);
 
     const idsCommaSeparated = watchlistIdList.join(",");
-    let loadUrl = "http://localhost:8081/api/v1/watchlists?ids=" + idsCommaSeparated;
+    let loadUrl =
+      "http://localhost:8081/api/v1/watchlists?ids=" + idsCommaSeparated;
 
     const config = {
-      headers: { Authorization: "Bearer " + userData.jwtToken },
+      headers: { Authorization: "Bearer " + tokenToUse },
     };
 
     try {
       await axios.delete(loadUrl, config);
-      
-      const updatedList = tableData.filter((m: any) => !watchlistIdList.includes(m.watchlistId));
+
+      const updatedList = tableData.filter(
+        (m: any) => !watchlistIdList.includes(m.watchlistId),
+      );
 
       setTableData(updatedList);
       setTotalItems(updatedList.length);
-      setSelectedIds([]); 
+      setSelectedIds([]);
     } catch (error: any) {
       console.error("Error removing from watchlist:", error);
 
       if (error.response?.status === 401 && !isRetry) {
         try {
           const currentRefreshToken = localStorage.getItem("refreshToken");
-          const refreshResponse = await axios.post("http://localhost:8081/api/v1/auth/refresh-token", {
-            token: currentRefreshToken,
-          });
+          const refreshResponse = await axios.post(
+            "http://localhost:8081/api/v1/auth/refresh-token",
+            {
+              token: currentRefreshToken,
+            },
+          );
 
           const newAccessToken = refreshResponse.data.token;
           if (refreshResponse.data.refreshToken) {
-            localStorage.setItem("refreshToken", refreshResponse.data.refreshToken);
+            localStorage.setItem(
+              "refreshToken",
+              refreshResponse.data.refreshToken,
+            );
           }
 
           setUserData({ ...userData, jwtToken: newAccessToken });
-          await removeFromWatchlist(watchlistIdList, true);
+          await removeFromWatchlist(watchlistIdList, true, newAccessToken);
         } catch (refreshError) {
           setUserData(null);
           localStorage.clear();
@@ -213,20 +249,30 @@ export const Watchlist = () => {
     }
   };
 
-  const isSelected = (watchlistId: number) => selectedIds.indexOf(watchlistId) !== -1;
+  const isSelected = (watchlistId: number) =>
+    selectedIds.indexOf(watchlistId) !== -1;
 
   // Mirroring cell responsive styles from EtfPage
   const getResponsiveCellStyles = (columnId: string) => {
     const basePadding = { xs: "10px 8px", md: "16px 12px" };
-    
+
     switch (columnId) {
       case "ter":
       case "symbol":
-        return { padding: basePadding, display: { xs: 'none', sm: 'table-cell' } };
+        return {
+          padding: basePadding,
+          display: { xs: "none", sm: "table-cell" },
+        };
       case "distribution":
-        return { padding: basePadding, display: { xs: 'none', md: 'table-cell' } };
+        return {
+          padding: basePadding,
+          display: { xs: "none", md: "table-cell" },
+        };
       case "isin":
-        return { padding: basePadding, display: { xs: 'none', lg: 'table-cell' } };
+        return {
+          padding: basePadding,
+          display: { xs: "none", lg: "table-cell" },
+        };
       default:
         return { padding: basePadding };
     }
@@ -234,45 +280,56 @@ export const Watchlist = () => {
 
   if (isCheckingAuth) {
     return (
-      <Box sx={{ display: "flex", justifyContent: "center", alignItems: "center", height: "80vh" }}>
+      <Box
+        sx={{
+          display: "flex",
+          justifyContent: "center",
+          alignItems: "center",
+          height: "80vh",
+        }}
+      >
         <CircularProgress />
       </Box>
     );
   }
 
   return (
-    <Paper 
-      sx={{ 
-        width: { xs: "98%", md: "92%", lg: "85%" }, 
-        overflow: "hidden", 
-        margin: "2rem auto", 
-        paddingBottom: "1rem" 
+    <Paper
+      sx={{
+        width: { xs: "98%", md: "92%", lg: "85%" },
+        overflow: "hidden",
+        margin: "2rem auto",
+        paddingBottom: "1rem",
       }}
     >
       {/* Header layout unified to match EtfPage */}
-      <Box 
-        sx={{ 
-          display: "flex", 
-          flexDirection: { xs: "column", sm: "row" }, 
-          justifyContent: "space-between", 
-          alignItems: { xs: "flex-start", sm: "center" }, 
+      <Box
+        sx={{
+          display: "flex",
+          flexDirection: { xs: "column", sm: "row" },
+          justifyContent: "space-between",
+          alignItems: { xs: "flex-start", sm: "center" },
           gap: 2,
-          padding: "1.5rem 1.5rem 1rem 1.5rem" 
+          padding: "1.5rem 1.5rem 1rem 1.5rem",
         }}
       >
         <Box>
-          <Typography 
-            variant="h4" 
-            component="h1" 
-            sx={{ 
+          <Typography
+            variant="h4"
+            component="h1"
+            sx={{
               fontWeight: "bold",
-              fontSize: { xs: '1.5rem', sm: '1.8rem', md: '2rem' },
-              letterSpacing: "-0.5px"
+              fontSize: { xs: "1.5rem", sm: "1.8rem", md: "2rem" },
+              letterSpacing: "-0.5px",
             }}
           >
             WATCHLIST ITEMS
           </Typography>
-          <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5, fontWeight: 500 }}>
+          <Typography
+            variant="body2"
+            color="text.secondary"
+            sx={{ mt: 0.5, fontWeight: 500 }}
+          >
             {totalItems} items in your watchlist.
           </Typography>
         </Box>
@@ -282,39 +339,58 @@ export const Watchlist = () => {
           color="error"
           disabled={selectedIds.length === 0 || actionLoading}
           onClick={() => removeFromWatchlist(selectedIds)}
-          startIcon={actionLoading ? <CircularProgress size={16} color="inherit" /> : <DeleteIcon />}
-          sx={{ 
-            width: { xs: "100%", sm: "auto" }, 
+          startIcon={
+            actionLoading ? (
+              <CircularProgress size={16} color="inherit" />
+            ) : (
+              <DeleteIcon />
+            )
+          }
+          sx={{
+            width: { xs: "100%", sm: "auto" },
             fontWeight: "bold",
-            px: 3
+            px: 3,
           }}
         >
-          {selectedIds.length > 0 
-            ? `Remove selection (${selectedIds.length})` 
+          {selectedIds.length > 0
+            ? `Remove selection (${selectedIds.length})`
             : "Remove from watchlist"}
         </Button>
       </Box>
 
       <TableContainer sx={{ overflowX: "auto" }}>
-        <Table stickyHeader aria-label="sticky table" sx={{ minWidth: { xs: '100%', sm: 800 } }}>
+        <Table
+          stickyHeader
+          aria-label="sticky table"
+          sx={{ minWidth: { xs: "100%", sm: 800 } }}
+        >
           <TableHead>
             <TableRow>
-              <TableCell padding="checkbox" sx={{ padding: { xs: "10px 8px", md: "16px 12px" } }}>
+              <TableCell
+                padding="checkbox"
+                sx={{ padding: { xs: "10px 8px", md: "16px 12px" } }}
+              >
                 <Checkbox
                   color="primary"
-                  indeterminate={selectedIds.length > 0 && selectedIds.length < tableData.length}
-                  checked={tableData.length > 0 && selectedIds.length === tableData.length}
+                  indeterminate={
+                    selectedIds.length > 0 &&
+                    selectedIds.length < tableData.length
+                  }
+                  checked={
+                    tableData.length > 0 &&
+                    selectedIds.length === tableData.length
+                  }
                   onChange={handleSelectAllClick}
                   disabled={tableData.length === 0}
                 />
               </TableCell>
 
               {COLUMNS.map((column) => (
-                <TableCell 
+                <TableCell
                   key={column.id}
-                  sx={{ 
-                    fontWeight: "bold", 
-                    ...getResponsiveCellStyles(column.id) 
+                  sx={{
+                    fontWeight: "bold",
+                    ...getResponsiveCellStyles(column.id),
                   }}
                 >
                   {column.sortKey ? (
@@ -328,9 +404,13 @@ export const Watchlist = () => {
                       }
                       onClick={() => handleSortRequest(column.sortKey!)}
                       sx={{
-                        '& .MuiTableSortLabel-icon': {
-                          color: searchData.sortField === column.sortKey ? 'primary.main' : 'inherit',
-                          opacity: searchData.sortField === column.sortKey ? 1 : 0.4,
+                        "& .MuiTableSortLabel-icon": {
+                          color:
+                            searchData.sortField === column.sortKey
+                              ? "primary.main"
+                              : "inherit",
+                          opacity:
+                            searchData.sortField === column.sortKey ? 1 : 0.4,
                         },
                       }}
                     >
@@ -341,57 +421,87 @@ export const Watchlist = () => {
                   )}
                 </TableCell>
               ))}
-              <TableCell sx={{ fontWeight: "bold", padding: { xs: "10px 8px", md: "16px 12px" }, textAlign: "center" }}>Alerts</TableCell>
+              <TableCell
+                sx={{
+                  fontWeight: "bold",
+                  padding: { xs: "10px 8px", md: "16px 12px" },
+                  textAlign: "center",
+                }}
+              >
+                Alerts
+              </TableCell>
             </TableRow>
           </TableHead>
           <TableBody>
             {tableData.map((row, index) => {
               const isItemSelected = isSelected(row.watchlistId);
               return (
-                <TableRow 
-                  key={index} 
+                <TableRow
+                  key={index}
                   hover
                   role="checkbox"
                   aria-checked={isItemSelected}
                   selected={isItemSelected}
                 >
-                  <TableCell padding="checkbox" sx={{ padding: { xs: "12px 8px", md: "16px 12px" } }}>
+                  <TableCell
+                    padding="checkbox"
+                    sx={{ padding: { xs: "12px 8px", md: "16px 12px" } }}
+                  >
                     <Checkbox
                       color="primary"
                       checked={isItemSelected}
                       onChange={() => handleSelectRow(row.watchlistId)}
                     />
                   </TableCell>
-                  
+
                   <TableCell
-                    sx={{ 
-                      cursor: "pointer", 
-                      color: "primary.main", 
+                    sx={{
+                      cursor: "pointer",
+                      color: "primary.main",
                       fontWeight: "bold",
                       padding: { xs: "12px 8px", md: "16px 12px" },
-                      maxWidth: { xs: '140px', sm: 'none' },
-                      overflow: 'hidden',
-                      textOverflow: 'ellipsis',
-                      whiteSpace: { xs: 'nowrap', sm: 'normal' }
+                      maxWidth: { xs: "140px", sm: "none" },
+                      overflow: "hidden",
+                      textOverflow: "ellipsis",
+                      whiteSpace: { xs: "nowrap", sm: "normal" },
                     }}
                     onClick={() => showEtf(row)}
                   >
                     {row.longName != null ? row.longName : row.shortName}
                   </TableCell>
-                  <TableCell sx={getResponsiveCellStyles("fundSize")}>{row.fundSize}</TableCell>
-                  <TableCell sx={getResponsiveCellStyles("ter")}>{row.ter}</TableCell>
-                  <TableCell sx={getResponsiveCellStyles("y1Yield")}>{row.y1Yield}</TableCell>
-                  <TableCell sx={getResponsiveCellStyles("price")}>{row.regularMarketPrice}</TableCell>
-                  <TableCell sx={getResponsiveCellStyles("distribution")}>{row.type}</TableCell>
-                  <TableCell sx={getResponsiveCellStyles("isin")}>{row.isin}</TableCell>
-                  <TableCell sx={getResponsiveCellStyles("symbol")}>{row.symbol}</TableCell>
+                  <TableCell sx={getResponsiveCellStyles("fundSize")}>
+                    {row.fundSize}
+                  </TableCell>
+                  <TableCell sx={getResponsiveCellStyles("ter")}>
+                    {row.ter}
+                  </TableCell>
+                  <TableCell sx={getResponsiveCellStyles("y1Yield")}>
+                    {row.y1Yield}
+                  </TableCell>
+                  <TableCell sx={getResponsiveCellStyles("price")}>
+                    {row.regularMarketPrice}
+                  </TableCell>
+                  <TableCell sx={getResponsiveCellStyles("distribution")}>
+                    {row.type}
+                  </TableCell>
+                  <TableCell sx={getResponsiveCellStyles("isin")}>
+                    {row.isin}
+                  </TableCell>
+                  <TableCell sx={getResponsiveCellStyles("symbol")}>
+                    {row.symbol}
+                  </TableCell>
 
-                  <TableCell sx={{ padding: { xs: "8px", md: "12px" }, textAlign: "center" }}>
+                  <TableCell
+                    sx={{
+                      padding: { xs: "8px", md: "12px" },
+                      textAlign: "center",
+                    }}
+                  >
                     <Tooltip title="Manage Alerts" arrow>
                       <IconButton
                         onClick={() => toWatchlistAletList(row)}
                         color="primary"
-                        sx={{ '&:hover': { backgroundColor: "action.hover" } }}
+                        sx={{ "&:hover": { backgroundColor: "action.hover" } }}
                       >
                         <NotificationsActiveIcon />
                       </IconButton>

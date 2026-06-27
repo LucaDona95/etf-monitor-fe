@@ -27,27 +27,61 @@ export const EtfDetail = () => {
   const [currentEtf, setEtf] = useState<any>(null);
   const [actionLoading, setActionLoading] = useState(false);
 
-  const loadData = async (etfId: string) => {
+  const loadData = async (etfId: string,isRetry = false,passedToken?: string) => {
     setLoading(true);
+
+    const tokenToUse = passedToken || userData?.jwtToken;
+
     const loadUrl = `${import.meta.env.VITE_API_URL}/api/v1/etfs/${etfId}`;
     const config = userData?.jwtToken
-      ? { headers: { Authorization: `Bearer ${userData.jwtToken}` } }
+      ? { headers: { Authorization: `Bearer ${tokenToUse}` } }
       : {};
 
     try {
       const response = await axios.get(loadUrl, config);
       setEtf(response.data);
-    } catch (err) {
-      console.error("Errore nel caricamento del dettaglio ETF", err);
+    } catch (error: any) {
+     
+      if (error.response?.status === 401 && !isRetry) {
+        try {
+          const currentRefreshToken = localStorage.getItem("refreshToken");
+          const refreshResponse = await axios.post(
+            "http://localhost:8081/api/v1/auth/refresh-token",
+            { token: currentRefreshToken },
+          );
+
+          const newAccessToken = refreshResponse.data.token;
+          if (refreshResponse.data.refreshToken) {
+            localStorage.setItem("refreshToken", refreshResponse.data.refreshToken);
+          }
+
+          setUserData({ ...userData, jwtToken: newAccessToken });
+          await loadData(etfId, true,newAccessToken);
+        } catch (refreshError) {
+          setUserData(null);
+          localStorage.clear();
+          navigate(`/etf/${etfId}`);
+        }
+      }
+
+
     } finally {
-      setLoading(false);
+     setLoading(false);
     }
   };
 
   useEffect(() => {
-    if (!isCheckingAuth && id) {
-      loadData(id);
-    }
+
+     if (isCheckingAuth) return;
+
+    
+      if (id) {
+        loadData(id);
+      }else{
+        navigate("/etf");
+      }
+      
+    
   }, [id, isCheckingAuth]);
 
   const forceGlobalLogout = () => {
@@ -56,15 +90,21 @@ export const EtfDetail = () => {
     navigate("/login");
   };
 
-  const addToWatchlist = async (isRetry = false) => {
+  const addToWatchlist = async (isRetry = false,passedToken?: string) => {
+
+
+
     if (!userData?.jwtToken) {
       navigate("/login");
       return;
     }
+
+    const tokenToUse = passedToken || userData?.jwtToken;
+
     setActionLoading(true);
     // Sostituito localhost con la variabile d'ambiente .env
     const loadUrl = `${import.meta.env.VITE_API_URL}/api/v1/watchlists`;
-    const config = { headers: { Authorization: "Bearer " + userData.jwtToken } };
+    const config = { headers: { Authorization: "Bearer " + tokenToUse } };
     const json = { etfId: currentEtf.id };
 
     try {
@@ -82,24 +122,27 @@ export const EtfDetail = () => {
             localStorage.setItem("refreshToken", refreshResponse.data.refreshToken);
           }
           setUserData({ ...userData, jwtToken: newAccessToken });
-          await addToWatchlist(true);
+          await addToWatchlist(true,newAccessToken);
         } catch (refreshError) {
           forceGlobalLogout();
         }
       }
     } finally {
-      if (!isRetry) setActionLoading(false);
+       setActionLoading(false);
     }
   };
 
-  const removeFromWatchlist = async (isRetry = false) => {
+  const removeFromWatchlist = async (isRetry = false,passedToken?: string) => {
     if (!userData?.jwtToken) {
       navigate("/login");
       return;
     }
+
+    const tokenToUse = passedToken || userData?.jwtToken;
+
     setActionLoading(true);
     const loadUrl = `${import.meta.env.VITE_API_URL}/api/v1/watchlists?ids=${currentEtf.watchlistId}`;
-    const config = { headers: { Authorization: "Bearer " + userData.jwtToken } };
+    const config = { headers: { Authorization: "Bearer " + tokenToUse } };
 
     try {
       await axios.delete(loadUrl, config);
@@ -116,13 +159,13 @@ export const EtfDetail = () => {
             localStorage.setItem("refreshToken", refreshResponse.data.refreshToken);
           }
           setUserData({ ...userData, jwtToken: newAccessToken });
-          await removeFromWatchlist(true);
+          await removeFromWatchlist(true,newAccessToken);
         } catch (refreshError) {
           forceGlobalLogout();
         }
       }
     } finally {
-      if (!isRetry) setActionLoading(false);
+       setActionLoading(false);
     }
   };
 

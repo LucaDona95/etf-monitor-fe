@@ -13,14 +13,14 @@ import {
   Grid // Ripristinato Grid standard
 } from '@mui/material';
 import axios from 'axios'; // Corretto l'import da 'ajax' a 'axios'
-import { useState, useContext } from "react";
+import { useState, useContext ,useEffect} from "react";
 
 import { AppContext } from "../App"; 
 
 export const Registration = () => {
   const navigate = useNavigate();
 
-  const { setUserData } = useContext(AppContext);
+  const { setUserData,isCheckingAuth } = useContext(AppContext);
 
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");
@@ -36,6 +36,19 @@ export const Registration = () => {
 
   const [loading, setLoading] = useState(false);
   const [registrationError, setRegistrationError] = useState("");
+  
+
+    useEffect(() => {
+      if (isCheckingAuth) return;
+  
+      const token = localStorage.getItem("refreshToken");
+      if (token) {
+      
+        navigate("/etf");
+        return;
+      }
+  
+    }, [isCheckingAuth]);
 
   const handleEmailBlur = () => {
     if (!email) {
