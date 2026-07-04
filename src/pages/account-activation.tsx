@@ -83,7 +83,7 @@ export const Activation = () => {
              'ngrok-skip-browser-warning': 'true',
               'Content-Type': 'application/json'
            } })
-      .then((response: any) => {
+      .then(() => {
         setLoading(false);
         setResendSuccess("If the email address exists in our system, you will receive a new activation code shortly.");
         if (emailFromContext && isFromLogin) {
@@ -134,7 +134,7 @@ export const Activation = () => {
              'ngrok-skip-browser-warning': 'true',
               'Content-Type': 'application/json'
            } })
-      .then((response: any) => {
+      .then(() => {
         setActivationCompleted(true);
         setLoading(false);
         setUserData(null); 

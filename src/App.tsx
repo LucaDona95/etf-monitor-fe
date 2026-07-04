@@ -1,5 +1,5 @@
 import { EtfPage } from "./pages/etfPage";
-import { BrowserRouter as Router, Route, Routes } from "react-router-dom";
+import { BrowserRouter as Router, Route, Routes,Navigate } from "react-router-dom";
 import { MuiNavbar } from "./components/MuiNavbar";
 import {EtfDetail} from "./pages/etf-detail";
 import {Registration} from "./pages/registration";
@@ -27,7 +27,7 @@ function App() {
 
 return (
     <AppContext.Provider value={{ userData, setUserData, isCheckingAuth, setIsCheckingAuth }}>
-      <Router>
+      <Router basename="/etf-monitor-fe">
         
         <Box 
           sx={{ 
@@ -39,7 +39,9 @@ return (
           <MuiNavbar />
           
           <Box component="main" sx={{ flexGrow: 1 }}>
-            <Routes> 
+            <Routes>
+              
+              <Route path="/" element={<Navigate to="/etf" replace />} />
               <Route path="/etf" element={<EtfPage />} />
               <Route path="/etf/:id" element={<EtfDetail />} />
               <Route path="/registration" element={<Registration />} />

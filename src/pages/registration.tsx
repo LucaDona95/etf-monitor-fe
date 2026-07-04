@@ -130,7 +130,7 @@ export const Registration = () => {
              'ngrok-skip-browser-warning': 'true',
               'Content-Type': 'application/json'
            } })
-      .then((response: any) => {
+      .then(() => {
         setLoading(false);
         console.log("email da memorizzare: " + email);
         setUserData({ email: email });

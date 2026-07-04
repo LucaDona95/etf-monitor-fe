@@ -25,7 +25,7 @@ import {
   TableRow,
 } from "@mui/material";
 
-import { useParams, useLocation, useNavigate } from "react-router-dom";
+import { useParams, useNavigate } from "react-router-dom";
 import AddCircleOutlineIcon from "@mui/icons-material/AddCircleOutline";
 import EditIcon from "@mui/icons-material/Edit";
 import DeleteIcon from "@mui/icons-material/Delete";
@@ -34,7 +34,6 @@ import CancelIcon from "@mui/icons-material/Cancel";
 
 export const EditAlert = () => {
   const { id } = useParams<{ id: string }>();
-  const location = useLocation();
   const navigate = useNavigate();
 
   const { userData, setUserData, isCheckingAuth } = useContext(AppContext);

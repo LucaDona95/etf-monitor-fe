@@ -2,13 +2,15 @@
   "name": "etf-monitor-fe",
   "private": true,
   "version": "0.0.0",
+  "homepage": "https://LucaDona95.github.io/etf-monitor-fe",
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "dev:https": "vite --mode staging",
     "build": "tsc -b && vite build",
     "lint": "eslint .",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "deploy": "gh-pages -b main -d dist",
+    "predeploy": "npm run build"
   },
   "dependencies": {
     "@emotion/react": "^11.14.0",
