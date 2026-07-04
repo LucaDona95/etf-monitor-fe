@@ -63,12 +63,12 @@ export const EditAlert = () => {
   useEffect(() => {
     if (isCheckingAuth) return;
 
-  const token = localStorage.getItem("refreshToken");
-  if (!token) {
+    const token = localStorage.getItem("refreshToken");
+    if (!token) {
       setUserData(null);
       navigate("/login");
-    return;
-  }
+      return;
+    }
 
     if (id) {
       loadData(Number(id));
@@ -78,16 +78,18 @@ export const EditAlert = () => {
     }
   }, [isCheckingAuth, id]);
 
-  const loadData = async (watchlistId: number, isRetry = false,passedToken?: string) => {
+  const loadData = async (watchlistId: number, isRetry = false, passedToken?: string) => {
     setLoading(true);
-    const loadUrl = import.meta.env.VITE_API_URL+"/api/v1/watchlists/" + watchlistId;
-
+    const loadUrl = import.meta.env.VITE_API_URL + "/api/v1/watchlists/" + watchlistId;
 
     const tokenToUse = passedToken || userData?.jwtToken;
 
     const config = {
-      headers: { Authorization: "Bearer " + tokenToUse ,'ngrok-skip-browser-warning': 'true',
-              'Content-Type': 'application/json'},
+      headers: {
+        Authorization: "Bearer " + tokenToUse,
+        'ngrok-skip-browser-warning': 'true',
+        'Content-Type': 'application/json'
+      },
     };
 
     try {
@@ -107,7 +109,7 @@ export const EditAlert = () => {
       });
 
       setAlertConditionList(response.data.alertConditionList || []);
-      setSelectedAlertIds([]); 
+      setSelectedAlertIds([]);
     } catch (error: any) {
       console.error("Error loading watchlist details:", error);
 
@@ -115,12 +117,14 @@ export const EditAlert = () => {
         try {
           const currentRefreshToken = localStorage.getItem("refreshToken");
           const refreshResponse = await axios.post(
-            import.meta.env.VITE_API_URL+"/api/v1/auth/refresh-token",
+            import.meta.env.VITE_API_URL + "/api/v1/auth/refresh-token",
             { token: currentRefreshToken },
-            { headers: { 
-             'ngrok-skip-browser-warning': 'true',
-              'Content-Type': 'application/json'
-           } }
+            {
+              headers: {
+                'ngrok-skip-browser-warning': 'true',
+                'Content-Type': 'application/json'
+              }
+            }
           );
 
           const newAccessToken = refreshResponse.data.token;
@@ -129,7 +133,7 @@ export const EditAlert = () => {
           }
 
           setUserData({ ...userData, jwtToken: newAccessToken });
-          await loadData(watchlistId, true,newAccessToken);
+          await loadData(watchlistId, true, newAccessToken);
         } catch (refreshError) {
           setUserData(null);
           localStorage.clear();
@@ -137,7 +141,7 @@ export const EditAlert = () => {
         }
       }
     } finally {
-       setLoading(false);
+      setLoading(false);
     }
   };
 
@@ -200,8 +204,9 @@ export const EditAlert = () => {
     setAlertDialogOpen(true);
   };
 
-  const handleSaveAlert = async (alertData: any, isRetry = false,passedToken?: string) => {
-    let url = import.meta.env.VITE_API_URL+`/api/v1/watchlists/${id}/alerts`;
+  const handleSaveAlert = async (alertData: any, isRetry = false, passedToken?: string) => {
+    setLoading(true); // Attiva lo stato di loading all'inizio del salvataggio
+    let url = import.meta.env.VITE_API_URL + `/api/v1/watchlists/${id}/alerts`;
     if (alertData.id != null) {
       url += "/" + alertData.id;
     }
@@ -209,8 +214,11 @@ export const EditAlert = () => {
     const tokenToUse = passedToken || userData?.jwtToken;
 
     const config = {
-      headers: { Authorization: "Bearer " + tokenToUse,'ngrok-skip-browser-warning': 'true',
-              'Content-Type': 'application/json' },
+      headers: {
+        Authorization: "Bearer " + tokenToUse,
+        'ngrok-skip-browser-warning': 'true',
+        'Content-Type': 'application/json'
+      },
     };
 
     let request = {
@@ -226,38 +234,42 @@ export const EditAlert = () => {
       } else {
         await axios.post(url, request, config);
       }
-      if (id) await loadData(Number(id),false,tokenToUse);
+      if (id) await loadData(Number(id), false, tokenToUse);
     } catch (error: any) {
       console.error("Error saving alert:", error);
       if (error.response?.status === 401 && !isRetry) {
         try {
           const currentRefreshToken = localStorage.getItem("refreshToken");
-          const refreshResponse = await axios.post(import.meta.env.VITE_API_URL+"/api/v1/auth/refresh-token", {
+          const refreshResponse = await axios.post(import.meta.env.VITE_API_URL + "/api/v1/auth/refresh-token", {
             token: currentRefreshToken
-            
-          },{ headers: { 
-             'ngrok-skip-browser-warning': 'true',
+          }, {
+            headers: {
+              'ngrok-skip-browser-warning': 'true',
               'Content-Type': 'application/json'
-           } });
+            }
+          });
           const newAccessToken = refreshResponse.data.token;
           if (refreshResponse.data.refreshToken) {
             localStorage.setItem("refreshToken", refreshResponse.data.refreshToken);
           }
           setUserData({ ...userData, jwtToken: newAccessToken });
-          await handleSaveAlert(alertData, true,newAccessToken);
+          await handleSaveAlert(alertData, true, newAccessToken);
         } catch (refreshError) {
           setUserData(null);
           localStorage.clear();
           navigate("/login");
         }
+      } else {
+        setLoading(false); // Disattiva il loading se non è un errore di token ma un fallimento generico
       }
     }
   };
 
   const handleDeleteAlerts = async (ids: number[], isRetry = false, passedToken?: string) => {
     if (ids.length === 0) return;
-    
-    let url = import.meta.env.VITE_API_URL+`/api/v1/watchlists/${id}/alerts?ids=${ids.join(",")}`;
+    setLoading(true); // Forza il blocco visivo immediato al click su elimina
+
+    let url = import.meta.env.VITE_API_URL + `/api/v1/watchlists/${id}/alerts?ids=${ids.join(",")}`;
 
     const tokenToUse = passedToken || userData?.jwtToken;
 
@@ -273,23 +285,27 @@ export const EditAlert = () => {
       if (error.response?.status === 401 && !isRetry) {
         try {
           const currentRefreshToken = localStorage.getItem("refreshToken");
-          const refreshResponse = await axios.post(import.meta.env.VITE_API_URL+"/api/v1/auth/refresh-token", {
+          const refreshResponse = await axios.post(import.meta.env.VITE_API_URL + "/api/v1/auth/refresh-token", {
             token: currentRefreshToken,
-          },{ headers: { 
-             'ngrok-skip-browser-warning': 'true',
+          }, {
+            headers: {
+              'ngrok-skip-browser-warning': 'true',
               'Content-Type': 'application/json'
-           } });
+            }
+          });
           const newAccessToken = refreshResponse.data.token;
           if (refreshResponse.data.refreshToken) {
             localStorage.setItem("refreshToken", refreshResponse.data.refreshToken);
           }
           setUserData({ ...userData, jwtToken: newAccessToken });
-          await handleDeleteAlerts(ids, true,newAccessToken);
+          await handleDeleteAlerts(ids, true, newAccessToken);
         } catch (refreshError) {
           setUserData(null);
           localStorage.clear();
           navigate("/login");
         }
+      } else {
+        setLoading(false); // Disattiva il loading in caso di errore generico di cancellazione
       }
     }
   };
@@ -335,7 +351,8 @@ export const EditAlert = () => {
     return { padding: basePadding };
   };
 
-  if (isCheckingAuth || loading) {
+  // Sostituito: Mostra lo spinner intero a schermo solo ed esclusivamente al primissimo avvio del componente
+  if (isCheckingAuth || (loading && !watchlistInfo)) {
     return (
       <Box sx={{ display: "flex", justifyContent: "center", alignItems: "center", height: "80vh" }}>
         <CircularProgress />
@@ -346,33 +363,32 @@ export const EditAlert = () => {
   return (
     <Box sx={{ width: { xs: "98%", md: "92%", lg: "85%" }, margin: "2rem auto" }}>
       {watchlistInfo && (
-        <Paper 
-          elevation={3} 
-          sx={{ 
-            p: 3, 
-            mb: 4, 
-            borderRadius: 2, 
-            bgcolor: "background.paper" 
+        <Paper
+          elevation={3}
+          sx={{
+            p: 3,
+            mb: 4,
+            borderRadius: 2,
+            bgcolor: "background.paper"
           }}
         >
-          {/* Sostituito Grid con una Box FlexBox nativa ed efficiente priva di bug di libreria */}
-          <Box 
-            sx={{ 
-              display: "flex", 
-              flexDirection: { xs: "column", md: "row" }, 
-              justifyContent: "space-between", 
+          <Box
+            sx={{
+              display: "flex",
+              flexDirection: { xs: "column", md: "row" },
+              justifyContent: "space-between",
               alignItems: { xs: "flex-start", md: "center" },
-              gap: 3 
+              gap: 3
             }}
           >
             <Box sx={{ width: { xs: "100%", md: "60%" } }}>
-              <Typography 
-                variant="h4" 
-                component="h1" 
-                sx={{ 
-                  fontWeight: "bold", 
+              <Typography
+                variant="h4"
+                component="h1"
+                sx={{
+                  fontWeight: "bold",
                   mb: 1.5,
-                  fontSize: { xs: '1.4rem', sm: '1.8rem', md: '2rem' } 
+                  fontSize: { xs: '1.4rem', sm: '1.8rem', md: '2rem' }
                 }}
               >
                 {watchlistInfo.longName || watchlistInfo.shortName || "N/A"}
@@ -425,12 +441,12 @@ export const EditAlert = () => {
       )}
 
       <Paper sx={{ p: { xs: 2, sm: 3 }, overflow: "hidden" }}>
-        <Box 
-          sx={{ 
-            display: "flex", 
-            flexDirection: { xs: "column", sm: "row" }, 
-            justifyContent: "space-between", 
-            alignItems: { xs: "flex-start", sm: "center" }, 
+        <Box
+          sx={{
+            display: "flex",
+            flexDirection: { xs: "column", sm: "row" },
+            justifyContent: "space-between",
+            alignItems: { xs: "flex-start", sm: "center" },
             gap: 2,
             mb: 3
           }}
@@ -444,15 +460,16 @@ export const EditAlert = () => {
             </Typography>
           </Box>
 
-          <Stack 
-            direction={{ xs: "column", sm: "row" }} 
-            spacing={1.5} 
+          <Stack
+            direction={{ xs: "column", sm: "row" }}
+            spacing={1.5}
             sx={{ width: { xs: "100%", sm: "auto" } }}
           >
             {selectedAlertIds.length > 0 && (
               <Button
                 variant="contained"
                 color="error"
+                disabled={loading}
                 startIcon={<DeleteIcon />}
                 onClick={() => handleDeleteAlerts(selectedAlertIds)}
                 sx={{ fontWeight: "bold", width: { xs: "100%", sm: "auto" } }}
@@ -463,7 +480,7 @@ export const EditAlert = () => {
             <Button
               variant="contained"
               color="primary"
-              disabled={alertConditionList.length >= 8}
+              disabled={alertConditionList.length >= 8 || loading}
               onClick={toNewAlert}
               startIcon={<AddCircleOutlineIcon />}
               sx={{ fontWeight: "bold", px: 3, width: { xs: "100%", sm: "auto" } }}
@@ -489,6 +506,7 @@ export const EditAlert = () => {
                 <TableCell padding="checkbox" sx={{ padding: { xs: "10px 8px", md: "16px 12px" } }}>
                   <Checkbox
                     color="primary"
+                    disabled={loading}
                     indeterminate={selectedAlertIds.length > 0 && selectedAlertIds.length < alertConditionList.length}
                     checked={alertConditionList.length > 0 && selectedAlertIds.length === alertConditionList.length}
                     onChange={handleSelectAllClick}
@@ -501,7 +519,27 @@ export const EditAlert = () => {
               </TableRow>
             </TableHead>
 
-            <TableBody>
+            <TableBody style={{ position: "relative" }}>
+              {/* OVERLAY SFOCATO: Appare sopra le righe correnti senza smontare la tabella */}
+              {loading && alertConditionList.length > 0 && (
+                <TableRow style={{ position: "absolute", top: 0, left: 0, width: "100%", height: "100%", zIndex: 2 }}>
+                  <TableCell colSpan={5} style={{
+                    padding: 0,
+                    border: "none",
+                    backgroundColor: "rgba(18, 18, 18, 0.55)",
+                    backdropFilter: "blur(2px)",
+                    display: "flex",
+                    justifyContent: "center",
+                    alignItems: "center",
+                    width: "100%",
+                    height: "100%"
+                  }}>
+                    <CircularProgress size={40} />
+                  </TableCell>
+                </TableRow>
+              )}
+
+              {/* GENERAZIONE RIGHE REALI */}
               {alertConditionList.map((row, index) => {
                 const isItemSelected = selectedAlertIds.indexOf(row.id) !== -1;
                 return (
@@ -510,6 +548,7 @@ export const EditAlert = () => {
                       <Checkbox
                         color="primary"
                         checked={isItemSelected}
+                        disabled={loading}
                         onChange={() => handleSelectRowClick(row.id)}
                       />
                     </TableCell>
@@ -521,19 +560,19 @@ export const EditAlert = () => {
                     </TableCell>
                     <TableCell sx={{ padding: { xs: "12px 8px", md: "16px 12px" } }}>
                       {row.active ? (
-                        <Chip 
-                          icon={<CheckCircleIcon style={{ color: 'inherit', fontSize: '16px' }} />} 
-                          label="Active" 
-                          color="success" 
-                          size="small" 
+                        <Chip
+                          icon={<CheckCircleIcon style={{ color: 'inherit', fontSize: '16px' }} />}
+                          label="Active"
+                          color="success"
+                          size="small"
                           sx={{ fontWeight: "bold" }}
                         />
                       ) : (
-                        <Chip 
-                          icon={<CancelIcon style={{ color: 'inherit', fontSize: '16px' }} />} 
-                          label="Inactive" 
+                        <Chip
+                          icon={<CancelIcon style={{ color: 'inherit', fontSize: '16px' }} />}
+                          label="Inactive"
                           variant="outlined"
-                          size="small" 
+                          size="small"
                           sx={{ color: "text.secondary", borderColor: "divider" }}
                         />
                       )}
@@ -543,6 +582,7 @@ export const EditAlert = () => {
                         <IconButton
                           onClick={() => toEditAlert(row)}
                           color="primary"
+                          disabled={loading}
                           sx={{ '&:hover': { backgroundColor: "action.hover" } }}
                         >
                           <EditIcon />
@@ -552,12 +592,23 @@ export const EditAlert = () => {
                   </TableRow>
                 );
               })}
-              {alertConditionList.length === 0 && (
+
+              {/* SCHERMATA VUOTA DI DEFAULT */}
+              {alertConditionList.length === 0 && !loading && (
                 <TableRow>
                   <TableCell colSpan={5} align="center" sx={{ py: 4 }}>
                     <Typography color="text.secondary" sx={{ fontWeight: 500 }}>
                       No alert conditions configured for this item.
                     </Typography>
+                  </TableCell>
+                </TableRow>
+              )}
+
+              {/* SPINNER SE ENTRASSIMO CON TABELLA TOTALMENTE VUOTA MA IN LOADING */}
+              {alertConditionList.length === 0 && loading && (
+                <TableRow>
+                  <TableCell colSpan={5} align="center" sx={{ py: 6 }}>
+                    <CircularProgress size={40} />
                   </TableCell>
                 </TableRow>
               )}
