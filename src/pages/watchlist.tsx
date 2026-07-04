@@ -29,7 +29,6 @@ interface ColumnConfig {
   sortKey?: string;
 }
 
-// Translated and unified column configurations matching EtfPage responsive criteria
 const COLUMNS: ColumnConfig[] = [
   { id: "name", label: "Fund name" },
   { id: "fundSize", label: "Fund Size", sortKey: "fundSize" },
