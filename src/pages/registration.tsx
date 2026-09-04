@@ -126,7 +126,7 @@ export const Registration = () => {
 
     const registrationRequest = { firstName, lastName, email, password };
 
-    axios.post(import.meta.env.VITE_API_URL+"/api/v1/auth/register", registrationRequest,{ headers: { 
+    axios.post(import.meta.env.VITE_API_URL+"/etf-portfolio/api/v1/auth/register", registrationRequest,{ headers: { 
              'ngrok-skip-browser-warning': 'true',
               'Content-Type': 'application/json'
            } })

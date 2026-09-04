@@ -100,11 +100,84 @@ export const EtfPage = () => {
     setSearchParams(params);
   };
 
-  const loadData = async (searchData: any, isRetry = false,passedToken?: string) => {
 
-     const tokenToUse = passedToken || userData?.jwtToken;
+  const loadWatchlistData = async (etfList: any, isRetry = false, passedToken?: string) => {
 
-    const loadUrl = import.meta.env.VITE_API_URL + "/api/v1/etfs";
+    const tokenToUse = passedToken || userData?.jwtToken;
+
+    if (tokenToUse != null) {
+
+
+      const idsCommaSeparated = etfList.map((e: any) => e.id).join(",");
+
+      const loadWatchlistUrl = `${import.meta.env.VITE_API_URL}/etf-portfolio/api/v1/watchlists/check-watchlist?ids=${idsCommaSeparated}`;
+      const watchlistConfig = {
+        headers: {
+          Authorization: `Bearer ${tokenToUse}`, 'ngrok-skip-browser-warning': 'true',
+          'Content-Type': 'application/json'
+        }
+      };
+
+      try {
+
+        const response = await axios.get(loadWatchlistUrl, watchlistConfig);
+
+        let etfAndWatchlistIdList = response.data.etfAndWatchlistIdList;
+
+        if (etfAndWatchlistIdList && etfAndWatchlistIdList.length > 0) {
+
+          const watchlistMap = new Map<number | string, number | string>();
+          etfAndWatchlistIdList.forEach((item: any) => {
+            watchlistMap.set(item.etfId, item.watchlistId);
+          });
+
+
+          const updatedEtfList = etfList.map((etf: any) => ({
+            ...etf,
+            watchlistId: watchlistMap.get(etf.id) || null
+          }));
+          setTableData(updatedEtfList);
+
+        }
+
+      } catch (error: any) {
+        if (error.response?.status === 401 && !isRetry) {
+          try {
+            const currentRefreshToken = localStorage.getItem("refreshToken");
+            const refreshResponse = await axios.post(
+              import.meta.env.VITE_API_URL + "/etf-portfolio/api/v1/auth/refresh-token",
+              { token: currentRefreshToken }, {
+              headers: {
+                'ngrok-skip-browser-warning': 'true',
+                'Content-Type': 'application/json'
+              }
+            }
+            );
+
+            const newAccessToken = refreshResponse.data.token;
+            if (refreshResponse.data.refreshToken) {
+              localStorage.setItem("refreshToken", refreshResponse.data.refreshToken);
+            }
+
+            setUserData({ ...userData, jwtToken: newAccessToken });
+            await loadWatchlistData(etfList, true, newAccessToken);
+          } catch (refreshError) {
+            setUserData(null);
+            localStorage.clear();
+            navigate("/login");
+          }
+        }
+
+      }
+
+    }
+
+  }
+
+  const loadData = async (searchData: any) => {
+
+
+    const loadUrl = import.meta.env.VITE_API_URL + "/etf-catalog/api/v1/etfs";
     const paramsForBackend = {
       ...searchData,
       sustainable: searchData.sustainable === "" ? null : searchData.sustainable === "true",
@@ -119,17 +192,12 @@ export const EtfPage = () => {
     });
 
     const config: any = { params: { ...paramsForBackend } };
-    if (tokenToUse) {
-      config.headers = { Authorization: "Bearer " + tokenToUse ,
-        'ngrok-skip-browser-warning': 'true',
-        'Content-Type': 'application/json'
-      };
-    }else{
-      config.headers = {
-        'ngrok-skip-browser-warning': 'true',
-        'Content-Type': 'application/json'
-      }
+
+    config.headers = {
+      'ngrok-skip-browser-warning': 'true',
+      'Content-Type': 'application/json'
     }
+
 
     try {
       const response = await axios.get(loadUrl, config);
@@ -138,29 +206,13 @@ export const EtfPage = () => {
       setTotalItems(response.data.total);
       setFromItem(response.data.fromItem);
       setToItem(response.data.toItem);
+      loadWatchlistData(response.data.etfList)
     } catch (error: any) {
-      if (error.response?.status === 401 && !isRetry) {
-        try {
-          const currentRefreshToken = localStorage.getItem("refreshToken");
-          const refreshResponse = await axios.post(import.meta.env.VITE_API_URL+"/api/v1/auth/refresh-token", {
-            token: currentRefreshToken
-          },{ headers: { 
-             'ngrok-skip-browser-warning': 'true',
-              'Content-Type': 'application/json'
-           } });
-          const newAccessToken = refreshResponse.data.token;
-          if (refreshResponse.data.refreshToken) {
-            localStorage.setItem("refreshToken", refreshResponse.data.refreshToken);
-          }
-          setUserData({ ...userData, jwtToken: newAccessToken });
-          await loadData(searchData, true,newAccessToken);
-        } catch (refreshError) {
-          setUserData(null);
-          localStorage.clear();
-          navigate("/etf");
-        }
-      }
+
+      console.error("cannot find etf");
+
     }
+
   };
 
   const handleApplyFilters = (newFilters: any) => {
@@ -187,7 +239,7 @@ export const EtfPage = () => {
     navigate(`/etf/${etfData.id}`);
   };
 
-  const removeFromWatchlist = async (etfData: any, isRetry = false,passedToken?: string) => {
+  const removeFromWatchlist = async (etfData: any, isRetry = false, passedToken?: string) => {
     if (isCheckingAuth) return;
 
 
@@ -200,9 +252,13 @@ export const EtfPage = () => {
       return;
     }
 
-    let loadUrl = import.meta.env.VITE_API_URL+"/api/v1/watchlists?ids=" + etfData.watchlistId;
-    const config = { headers: { Authorization: "Bearer " + tokenToUse, 'ngrok-skip-browser-warning': 'true',
-              'Content-Type': 'application/json' } };
+    let loadUrl = import.meta.env.VITE_API_URL + "/etf-portfolio/api/v1/watchlists?ids=" + etfData.watchlistId;
+    const config = {
+      headers: {
+        Authorization: "Bearer " + tokenToUse, 'ngrok-skip-browser-warning': 'true',
+        'Content-Type': 'application/json'
+      }
+    };
 
     try {
       await axios.delete(loadUrl, config);
@@ -212,11 +268,13 @@ export const EtfPage = () => {
       if (error.response?.status === 401 && !isRetry) {
         try {
           const currentRefreshToken = localStorage.getItem("refreshToken");
-          const refreshResponse = await axios.post(import.meta.env.VITE_API_URL+"/api/v1/auth/refresh-token", { token: currentRefreshToken },
-            { headers: { 
-             'ngrok-skip-browser-warning': 'true',
-              'Content-Type': 'application/json'
-           } }
+          const refreshResponse = await axios.post(import.meta.env.VITE_API_URL + "/etf-portfolio/api/v1/auth/refresh-token", { token: currentRefreshToken },
+            {
+              headers: {
+                'ngrok-skip-browser-warning': 'true',
+                'Content-Type': 'application/json'
+              }
+            }
           );
           const newAccessToken = refreshResponse.data.token;
           if (refreshResponse.data.refreshToken) localStorage.setItem("refreshToken", refreshResponse.data.refreshToken);
@@ -231,7 +289,7 @@ export const EtfPage = () => {
     }
   };
 
-  const addToWatchlist = async (etfData: any, isRetry = false,passedToken?: string) => {
+  const addToWatchlist = async (etfData: any, isRetry = false, passedToken?: string) => {
     if (isCheckingAuth) return;
 
     if (!userData?.jwtToken) {
@@ -242,10 +300,14 @@ export const EtfPage = () => {
 
     const tokenToUse = passedToken || userData?.jwtToken;
 
-    
-    let loadUrl = import.meta.env.VITE_API_URL+"/api/v1/watchlists";
-    const config = { headers: { Authorization: "Bearer " + tokenToUse,'ngrok-skip-browser-warning': 'true',
-              'Content-Type': 'application/json' } };
+
+    let loadUrl = import.meta.env.VITE_API_URL + "/etf-portfolio/api/v1/watchlists";
+    const config = {
+      headers: {
+        Authorization: "Bearer " + tokenToUse, 'ngrok-skip-browser-warning': 'true',
+        'Content-Type': 'application/json'
+      }
+    };
     let json = { etfId: etfData.id };
 
     try {
@@ -256,16 +318,18 @@ export const EtfPage = () => {
       if (error.response?.status === 401 && !isRetry) {
         try {
           const currentRefreshToken = localStorage.getItem("refreshToken");
-          const refreshResponse = await axios.post(import.meta.env.VITE_API_URL+"/api/v1/auth/refresh-token", { token: currentRefreshToken },
-            { headers: { 
-             'ngrok-skip-browser-warning': 'true',
-              'Content-Type': 'application/json'
-           } }
+          const refreshResponse = await axios.post(import.meta.env.VITE_API_URL + "/etf-portfolio/api/v1/auth/refresh-token", { token: currentRefreshToken },
+            {
+              headers: {
+                'ngrok-skip-browser-warning': 'true',
+                'Content-Type': 'application/json'
+              }
+            }
           );
           const newAccessToken = refreshResponse.data.token;
           if (refreshResponse.data.refreshToken) localStorage.setItem("refreshToken", refreshResponse.data.refreshToken);
           setUserData({ ...userData, jwtToken: newAccessToken });
-          await addToWatchlist(etfData, true,newAccessToken);
+          await addToWatchlist(etfData, true, newAccessToken);
         } catch (refreshError) {
           setUserData(null);
           localStorage.clear();
@@ -316,7 +380,7 @@ export const EtfPage = () => {
 
   const getResponsiveCellStyles = (columnId: string) => {
     const basePadding = { xs: "10px 8px", md: "16px 12px" };
-    
+
     switch (columnId) {
       case "ter":
       case "symbol":
@@ -331,29 +395,29 @@ export const EtfPage = () => {
   };
 
   return (
-    <Paper 
-      sx={{ 
-        width: { xs: "98%", md: "92%", lg: "85%" }, 
-        overflow: "hidden", 
-        margin: "2rem auto", 
-        paddingBottom: "1rem" 
+    <Paper
+      sx={{
+        width: { xs: "98%", md: "92%", lg: "85%" },
+        overflow: "hidden",
+        margin: "2rem auto",
+        paddingBottom: "1rem"
       }}
     >
       {/* Header unificato: Allinea titolo e bottone sulla stessa linea */}
-      <Box 
-        sx={{ 
-          display: "flex", 
-          flexDirection: { xs: "column", sm: "row" }, 
-          justifyContent: "space-between", 
-          alignItems: { xs: "flex-start", sm: "center" }, 
+      <Box
+        sx={{
+          display: "flex",
+          flexDirection: { xs: "column", sm: "row" },
+          justifyContent: "space-between",
+          alignItems: { xs: "flex-start", sm: "center" },
           gap: 2,
-          padding: "1.5rem 1.5rem 1rem 1.5rem" 
+          padding: "1.5rem 1.5rem 1rem 1.5rem"
         }}
       >
-        <Typography 
-          variant="h4" 
-          component="div" 
-          sx={{ 
+        <Typography
+          variant="h4"
+          component="div"
+          sx={{
             fontWeight: "bold",
             fontSize: { xs: '1.5rem', sm: '1.8rem', md: '2rem' },
             letterSpacing: "-0.5px"
@@ -361,14 +425,14 @@ export const EtfPage = () => {
         >
           ETF LIST
         </Typography>
-        
+
         <Button
           variant="contained"
           color="primary"
-          startIcon={<SearchIcon />} 
+          startIcon={<SearchIcon />}
           onClick={() => setSearchDialogOpen(true)}
-          sx={{ 
-            width: { xs: "100%", sm: "auto" }, 
+          sx={{
+            width: { xs: "100%", sm: "auto" },
             fontWeight: "bold",
             px: 3 // Aumenta il padding orizzontale del bottone
           }}
@@ -389,11 +453,11 @@ export const EtfPage = () => {
           <TableHead>
             <TableRow>
               {COLUMNS.map((column) => (
-                <TableCell 
-                  key={column.id} 
-                  sx={{ 
-                    fontWeight: "bold", 
-                    ...getResponsiveCellStyles(column.id) 
+                <TableCell
+                  key={column.id}
+                  sx={{
+                    fontWeight: "bold",
+                    ...getResponsiveCellStyles(column.id)
                   }}
                 >
                   {column.sortKey ? (
@@ -423,9 +487,9 @@ export const EtfPage = () => {
               <TableRow key={index} tabIndex={-1} hover>
                 <TableCell
                   role="checkbox"
-                  sx={{ 
-                    cursor: "pointer", 
-                    color: 'primary.main', 
+                  sx={{
+                    cursor: "pointer",
+                    color: 'primary.main',
                     fontWeight: 'bold',
                     padding: { xs: "12px 8px", md: "16px 12px" },
                     maxWidth: { xs: '140px', sm: 'none' },
@@ -445,13 +509,13 @@ export const EtfPage = () => {
                 <TableCell sx={getResponsiveCellStyles("isin")}>{row.isin}</TableCell>
                 <TableCell sx={getResponsiveCellStyles("symbol")}>{row.symbol}</TableCell>
                 <TableCell sx={{ padding: { xs: "8px", md: "12px" }, textAlign: "center" }}>
-                  {row.watchlistId === null ? (
+                  {row.watchlistId == null ? (
                     <Tooltip title="Aggiungi alla Watchlist" arrow>
-                      <IconButton 
+                      <IconButton
                         onClick={() => addToWatchlist(row)}
-                        sx={{ 
+                        sx={{
                           color: "success.main",
-                          '&:hover': { backgroundColor: "success.lighter" } 
+                          '&:hover': { backgroundColor: "success.lighter" }
                         }}
                       >
                         <AddCircleOutlineIcon />
@@ -459,11 +523,11 @@ export const EtfPage = () => {
                     </Tooltip>
                   ) : (
                     <Tooltip title="Rimuovi dalla Watchlist" arrow>
-                      <IconButton 
+                      <IconButton
                         onClick={() => removeFromWatchlist(row)}
-                        sx={{ 
+                        sx={{
                           color: "error.main",
-                          '&:hover': { backgroundColor: "error.lighter" } 
+                          '&:hover': { backgroundColor: "error.lighter" }
                         }}
                       >
                         <RemoveCircleOutlineIcon />
@@ -478,15 +542,15 @@ export const EtfPage = () => {
       </TableContainer>
 
       {totalPages > 0 && (
-        <Box sx={{ 
-          display: 'flex', 
-          flexDirection: { xs: 'column', sm: 'row' }, 
-          justifyContent: 'space-between', 
-          alignItems: 'center', 
+        <Box sx={{
+          display: 'flex',
+          flexDirection: { xs: 'column', sm: 'row' },
+          justifyContent: 'space-between',
+          alignItems: 'center',
           gap: 2,
-          padding: '1.5rem 1rem 0.5rem 1rem' 
+          padding: '1.5rem 1rem 0.5rem 1rem'
         }}>
-          
+
           <Typography variant="body2" color="text.secondary" sx={{ fontWeight: 500 }}>
             Showing {fromItem} to {toItem} of {totalItems} items
           </Typography>

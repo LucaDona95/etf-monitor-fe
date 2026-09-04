@@ -90,7 +90,7 @@ export const Watchlist = () => {
     isRetry = false,
     passedToken?: string,
   ) => {
-    const loadUrl = import.meta.env.VITE_API_URL+"/api/v1/watchlists";
+    const loadUrl = import.meta.env.VITE_API_URL+"/etf-portfolio/api/v1/watchlists/search-watchlist";
     const config: any = { params: { ...searchData } };
 
     const tokenToUse = passedToken || userData?.jwtToken;
@@ -110,7 +110,7 @@ export const Watchlist = () => {
         try {
           const currentRefreshToken = localStorage.getItem("refreshToken");
           const refreshResponse = await axios.post(
-            import.meta.env.VITE_API_URL+"/api/v1/auth/refresh-token",
+            import.meta.env.VITE_API_URL+"/etf-portfolio/api/v1/auth/refresh-token",
             {
               token: currentRefreshToken,
             },
@@ -202,7 +202,7 @@ export const Watchlist = () => {
 
     const idsCommaSeparated = watchlistIdList.join(",");
     let loadUrl =
-     import.meta.env.VITE_API_URL+"/api/v1/watchlists?ids=" + idsCommaSeparated;
+     import.meta.env.VITE_API_URL+"/etf-portfolio/api/v1/watchlists?ids=" + idsCommaSeparated;
 
     const config = {
       headers: { Authorization: "Bearer " + tokenToUse,'ngrok-skip-browser-warning': 'true',
@@ -226,7 +226,7 @@ export const Watchlist = () => {
         try {
           const currentRefreshToken = localStorage.getItem("refreshToken");
           const refreshResponse = await axios.post(
-            import.meta.env.VITE_API_URL+"/api/v1/auth/refresh-token",
+            import.meta.env.VITE_API_URL+"/etf-portfolio/api/v1/auth/refresh-token",
             {
               token: currentRefreshToken,
             },

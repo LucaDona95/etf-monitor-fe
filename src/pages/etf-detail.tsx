@@ -19,76 +19,115 @@ import StarIcon from "@mui/icons-material/Star";
 import StarBorderIcon from "@mui/icons-material/StarBorder";
 
 export const EtfDetail = () => {
-  const { id } = useParams<{ id: string }>(); 
+  const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const { userData, setUserData, isCheckingAuth } = useContext(AppContext);
 
   const [loading, setLoading] = useState(true);
   const [currentEtf, setEtf] = useState<any>(null);
+  const [currentWatchlistId, setWatchlistId] = useState<number | null>(null);
   const [actionLoading, setActionLoading] = useState(false);
 
-  const loadData = async (etfId: string,isRetry = false,passedToken?: string) => {
+  const loadData = async (etfId: string, isRetry = false, passedToken?: string) => {
     setLoading(true);
+
 
     const tokenToUse = passedToken || userData?.jwtToken;
 
-    const loadUrl = `${import.meta.env.VITE_API_URL}/api/v1/etfs/${etfId}`;
-    const config = userData?.jwtToken
-      ? { headers: { Authorization: `Bearer ${tokenToUse}`, 'ngrok-skip-browser-warning': 'true',
-              'Content-Type': 'application/json' } }
-      : { headers: { 
-             'ngrok-skip-browser-warning': 'true',
-              'Content-Type': 'application/json'
-           } };
+    if (tokenToUse != null) {
+
+      const loadWatchlistUrl = `${import.meta.env.VITE_API_URL}/etf-portfolio/api/v1/watchlists/check-watchlist?ids=${etfId}`;
+      const watchlistConfig = {
+          headers: {
+            Authorization: `Bearer ${tokenToUse}`, 'ngrok-skip-browser-warning': 'true',
+            'Content-Type': 'application/json'
+          }
+        };
+        
+      
+      try {
+
+        const response = await axios.get(loadWatchlistUrl, watchlistConfig);
+
+        let etfAndWatchlsitIdList = response.data.etfAndWatchlistIdList;
+
+        if (etfAndWatchlsitIdList && etfAndWatchlsitIdList.length > 0) {
+          setWatchlistId(etfAndWatchlsitIdList[0].watchlistId);
+        } else {
+          setWatchlistId(null);
+        }
+
+
+      } catch (error: any) {
+        if (error.response?.status === 401 && !isRetry) {
+          try {
+            const currentRefreshToken = localStorage.getItem("refreshToken");
+            const refreshResponse = await axios.post(
+              import.meta.env.VITE_API_URL + "/etf-portfolio/api/v1/auth/refresh-token",
+              { token: currentRefreshToken }, {
+              headers: {
+                'ngrok-skip-browser-warning': 'true',
+                'Content-Type': 'application/json'
+              }
+            }
+            );
+
+            const newAccessToken = refreshResponse.data.token;
+            if (refreshResponse.data.refreshToken) {
+              localStorage.setItem("refreshToken", refreshResponse.data.refreshToken);
+            }
+
+            setUserData({ ...userData, jwtToken: newAccessToken });
+            await loadData(etfId, true, newAccessToken);
+          } catch (refreshError) {
+            setUserData(null);
+            localStorage.clear();
+            navigate("/etf");
+          }
+        }
+
+      }
+
+
+    }
+
+
+
+    const loadUrl = `${import.meta.env.VITE_API_URL}/etf-catalog/api/v1/etfs/${etfId}`;
+    const config = {
+      headers: {
+        'ngrok-skip-browser-warning': 'true',
+        'Content-Type': 'application/json'
+      }
+    };
 
     try {
       const response = await axios.get(loadUrl, config);
       setEtf(response.data);
     } catch (error: any) {
-     
-      if (error.response?.status === 401 && !isRetry) {
-        try {
-          const currentRefreshToken = localStorage.getItem("refreshToken");
-          const refreshResponse = await axios.post(
-            import.meta.env.VITE_API_URL+"/api/v1/auth/refresh-token",
-            { token: currentRefreshToken },{ headers: { 
-             'ngrok-skip-browser-warning': 'true',
-              'Content-Type': 'application/json'
-           } }
-          );
 
-          const newAccessToken = refreshResponse.data.token;
-          if (refreshResponse.data.refreshToken) {
-            localStorage.setItem("refreshToken", refreshResponse.data.refreshToken);
-          }
-
-          setUserData({ ...userData, jwtToken: newAccessToken });
-          await loadData(etfId, true,newAccessToken);
-        } catch (refreshError) {
-          setUserData(null);
-          localStorage.clear();
-          navigate(`/etf/${etfId}`);
-        }
-      }
+      console.error("cannot find etf");
 
 
     } finally {
-     setLoading(false);
+      setLoading(false);
     }
+
+
   };
 
   useEffect(() => {
 
-     if (isCheckingAuth) return;
+    if (isCheckingAuth) return;
 
-    
-      if (id) {
-        loadData(id);
-      }else{
-        navigate("/etf");
-      }
-      
-    
+
+    if (id) {
+      loadData(id);
+    } else {
+      navigate("/etf");
+    }
+
+
   }, [id, isCheckingAuth]);
 
   const forceGlobalLogout = () => {
@@ -97,7 +136,7 @@ export const EtfDetail = () => {
     navigate("/login");
   };
 
-  const addToWatchlist = async (isRetry = false,passedToken?: string) => {
+  const addToWatchlist = async (isRetry = false, passedToken?: string) => {
 
 
 
@@ -109,41 +148,48 @@ export const EtfDetail = () => {
     const tokenToUse = passedToken || userData?.jwtToken;
 
     setActionLoading(true);
-    
-    const loadUrl = `${import.meta.env.VITE_API_URL}/api/v1/watchlists`;
-    const config = { headers: { Authorization: "Bearer " + tokenToUse, 'ngrok-skip-browser-warning': 'true',
-              'Content-Type': 'application/json' } };
+
+    const loadUrl = `${import.meta.env.VITE_API_URL}/etf-portfolio/api/v1/watchlists`;
+    const config = {
+      headers: {
+        Authorization: "Bearer " + tokenToUse, 'ngrok-skip-browser-warning': 'true',
+        'Content-Type': 'application/json'
+      }
+    };
     const json = { etfId: currentEtf.id };
 
     try {
       const response = await axios.post(loadUrl, json, config);
-      setEtf({ ...currentEtf, watchlistId: response.data });
+      //setEtf({ ...currentEtf, watchlistId: response.data });
+      setWatchlistId(response.data);
     } catch (error: any) {
       if (error.response?.status === 401 && !isRetry) {
         try {
           const currentRefreshToken = localStorage.getItem("refreshToken");
-          const refreshResponse = await axios.post(`${import.meta.env.VITE_API_URL}/api/v1/auth/refresh-token`, {
+          const refreshResponse = await axios.post(`${import.meta.env.VITE_API_URL}/etf-portfolio/api/v1/auth/refresh-token`, {
             token: currentRefreshToken
-          },{ headers: { 
-             'ngrok-skip-browser-warning': 'true',
+          }, {
+            headers: {
+              'ngrok-skip-browser-warning': 'true',
               'Content-Type': 'application/json'
-           } });
+            }
+          });
           const newAccessToken = refreshResponse.data.token;
           if (refreshResponse.data.refreshToken) {
             localStorage.setItem("refreshToken", refreshResponse.data.refreshToken);
           }
           setUserData({ ...userData, jwtToken: newAccessToken });
-          await addToWatchlist(true,newAccessToken);
+          await addToWatchlist(true, newAccessToken);
         } catch (refreshError) {
           forceGlobalLogout();
         }
       }
     } finally {
-       setActionLoading(false);
+      setActionLoading(false);
     }
   };
 
-  const removeFromWatchlist = async (isRetry = false,passedToken?: string) => {
+  const removeFromWatchlist = async (isRetry = false, passedToken?: string) => {
     if (!userData?.jwtToken) {
       navigate("/login");
       return;
@@ -152,35 +198,41 @@ export const EtfDetail = () => {
     const tokenToUse = passedToken || userData?.jwtToken;
 
     setActionLoading(true);
-    const loadUrl = `${import.meta.env.VITE_API_URL}/api/v1/watchlists?ids=${currentEtf.watchlistId}`;
-    const config = { headers: { Authorization: "Bearer " + tokenToUse, 'ngrok-skip-browser-warning': 'true',
-              'Content-Type': 'application/json' } };
+    const loadUrl = `${import.meta.env.VITE_API_URL}/etf-portfolio/api/v1/watchlists?ids=${currentWatchlistId}`;
+    const config = {
+      headers: {
+        Authorization: "Bearer " + tokenToUse, 'ngrok-skip-browser-warning': 'true',
+        'Content-Type': 'application/json'
+      }
+    };
 
     try {
       await axios.delete(loadUrl, config);
-      setEtf({ ...currentEtf, watchlistId: null });
+      setWatchlistId(null);
     } catch (error: any) {
       if (error.response?.status === 401 && !isRetry) {
         try {
           const currentRefreshToken = localStorage.getItem("refreshToken");
-          const refreshResponse = await axios.post(`${import.meta.env.VITE_API_URL}/api/v1/auth/refresh-token`, {
+          const refreshResponse = await axios.post(`${import.meta.env.VITE_API_URL}/etf-portfolio/api/v1/auth/refresh-token`, {
             token: currentRefreshToken
-          },{ headers: { 
-             'ngrok-skip-browser-warning': 'true',
+          }, {
+            headers: {
+              'ngrok-skip-browser-warning': 'true',
               'Content-Type': 'application/json'
-           } });
+            }
+          });
           const newAccessToken = refreshResponse.data.token;
           if (refreshResponse.data.refreshToken) {
             localStorage.setItem("refreshToken", refreshResponse.data.refreshToken);
           }
           setUserData({ ...userData, jwtToken: newAccessToken });
-          await removeFromWatchlist(true,newAccessToken);
+          await removeFromWatchlist(true, newAccessToken);
         } catch (refreshError) {
           forceGlobalLogout();
         }
       }
     } finally {
-       setActionLoading(false);
+      setActionLoading(false);
     }
   };
 
@@ -245,9 +297,9 @@ export const EtfDetail = () => {
                 ? `${currentEtf.regularMarketPrice.toFixed(2)} ${currentEtf.currency || "EUR"}`
                 : "N/A"}
             </Typography>
-            
+
             <Box sx={{ mb: 1 }}>
-              {currentEtf.watchlistId == null ? (
+              {currentWatchlistId == null ? (
                 <Button
                   variant="outlined"
                   color="primary"

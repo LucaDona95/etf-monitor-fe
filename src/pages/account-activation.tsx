@@ -79,7 +79,7 @@ export const Activation = () => {
     setGlobalError("");
     setResendSuccess("");
 
-    axios.post(import.meta.env.VITE_API_URL+"/api/v1/auth/resend-activation", { email: email },{ headers: { 
+    axios.post(import.meta.env.VITE_API_URL+"/etf-portfolio/api/v1/auth/resend-activation", { email: email },{ headers: { 
              'ngrok-skip-browser-warning': 'true',
               'Content-Type': 'application/json'
            } })
@@ -130,7 +130,7 @@ export const Activation = () => {
       email: email
     };
 
-    axios.post(import.meta.env.VITE_API_URL+"/api/v1/auth/activate", activationRequest,{ headers: { 
+    axios.post(import.meta.env.VITE_API_URL+"/etf-portfolio/api/v1/auth/activate", activationRequest,{ headers: { 
              'ngrok-skip-browser-warning': 'true',
               'Content-Type': 'application/json'
            } })

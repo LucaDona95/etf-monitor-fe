@@ -78,7 +78,7 @@ export const UserProfile = () => {
 
     try {
       const response = await axios.get(
-        import.meta.env.VITE_API_URL+"/api/v1/users/profile",
+        import.meta.env.VITE_API_URL+"/etf-portfolio/api/v1/users/profile",
         config,
       );
 
@@ -94,7 +94,7 @@ export const UserProfile = () => {
         try {
           const currentRefreshToken = localStorage.getItem("refreshToken");
           const refreshResponse = await axios.post(
-            import.meta.env.VITE_API_URL+"/api/v1/auth/refresh-token",
+            import.meta.env.VITE_API_URL+"/etf-portfolio/api/v1/auth/refresh-token",
             {
               refreshToken: currentRefreshToken,
             },
@@ -170,7 +170,7 @@ export const UserProfile = () => {
 
     try {
       await axios.patch(
-        import.meta.env.VITE_API_URL+"/api/v1/users/profile",
+        import.meta.env.VITE_API_URL+"/etf-portfolio/api/v1/users/profile",
         patchBody,
         config,
       );
@@ -183,7 +183,7 @@ export const UserProfile = () => {
         try {
           const currentRefreshToken = localStorage.getItem("refreshToken");
           const refreshResponse = await axios.post(
-            import.meta.env.VITE_API_URL+"/api/v1/auth/refresh-token",
+            import.meta.env.VITE_API_URL+"/etf-portfolio/api/v1/auth/refresh-token",
             {
               refreshToken: currentRefreshToken,
             },

@@ -79,7 +79,7 @@ export const EditAlert = () => {
 
   const loadData = async (watchlistId: number, isRetry = false, passedToken?: string) => {
     setLoading(true);
-    const loadUrl = import.meta.env.VITE_API_URL + "/api/v1/watchlists/" + watchlistId;
+    const loadUrl = import.meta.env.VITE_API_URL + "/etf-portfolio/api/v1/watchlists/" + watchlistId;
 
     const tokenToUse = passedToken || userData?.jwtToken;
 
@@ -116,7 +116,7 @@ export const EditAlert = () => {
         try {
           const currentRefreshToken = localStorage.getItem("refreshToken");
           const refreshResponse = await axios.post(
-            import.meta.env.VITE_API_URL + "/api/v1/auth/refresh-token",
+            import.meta.env.VITE_API_URL + "/etf-portfolio/api/v1/auth/refresh-token",
             { token: currentRefreshToken },
             {
               headers: {
@@ -205,7 +205,7 @@ export const EditAlert = () => {
 
   const handleSaveAlert = async (alertData: any, isRetry = false, passedToken?: string) => {
     setLoading(true); // Attiva lo stato di loading all'inizio del salvataggio
-    let url = import.meta.env.VITE_API_URL + `/api/v1/watchlists/${id}/alerts`;
+    let url = import.meta.env.VITE_API_URL + `/etf-portfolio/api/v1/watchlists/${id}/alerts`;
     if (alertData.id != null) {
       url += "/" + alertData.id;
     }
@@ -239,7 +239,7 @@ export const EditAlert = () => {
       if (error.response?.status === 401 && !isRetry) {
         try {
           const currentRefreshToken = localStorage.getItem("refreshToken");
-          const refreshResponse = await axios.post(import.meta.env.VITE_API_URL + "/api/v1/auth/refresh-token", {
+          const refreshResponse = await axios.post(import.meta.env.VITE_API_URL + "/etf-portfolio/api/v1/auth/refresh-token", {
             token: currentRefreshToken
           }, {
             headers: {
@@ -268,7 +268,7 @@ export const EditAlert = () => {
     if (ids.length === 0) return;
     setLoading(true); // Forza il blocco visivo immediato al click su elimina
 
-    let url = import.meta.env.VITE_API_URL + `/api/v1/watchlists/${id}/alerts?ids=${ids.join(",")}`;
+    let url = import.meta.env.VITE_API_URL + `/etf-portfolio/api/v1/watchlists/${id}/alerts?ids=${ids.join(",")}`;
 
     const tokenToUse = passedToken || userData?.jwtToken;
 
@@ -284,7 +284,7 @@ export const EditAlert = () => {
       if (error.response?.status === 401 && !isRetry) {
         try {
           const currentRefreshToken = localStorage.getItem("refreshToken");
-          const refreshResponse = await axios.post(import.meta.env.VITE_API_URL + "/api/v1/auth/refresh-token", {
+          const refreshResponse = await axios.post(import.meta.env.VITE_API_URL + "/etf-portfolio/api/v1/auth/refresh-token", {
             token: currentRefreshToken,
           }, {
             headers: {

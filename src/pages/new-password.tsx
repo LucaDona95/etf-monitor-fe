@@ -106,7 +106,7 @@ export const ChangePassword = () => {
     };
 
     try {
-      await axios.patch(import.meta.env.VITE_API_URL+"/api/v1/users/password", requestBody, config);
+      await axios.patch(import.meta.env.VITE_API_URL+"/etf-portfolio/api/v1/users/password", requestBody, config);
       
       setSuccessMsg("Password updated successfully!");
       setOldPassword("");
@@ -127,7 +127,7 @@ export const ChangePassword = () => {
       if (error.response?.status === 401 && !isRetry) {
         try {
           const currentRefreshToken = localStorage.getItem("refreshToken");
-          const refreshResponse = await axios.post(import.meta.env.VITE_API_URL+"/api/v1/auth/refresh-token", {
+          const refreshResponse = await axios.post(import.meta.env.VITE_API_URL+"/etf-portfolio/api/v1/auth/refresh-token", {
             token: currentRefreshToken
           },{ headers: { 
              'ngrok-skip-browser-warning': 'true',
